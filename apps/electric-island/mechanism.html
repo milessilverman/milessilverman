@@ -1,0 +1,935 @@
+<!doctype html>
+<html lang="en">
+<head><script>
+(function(){
+  var query=new URLSearchParams(location.search);
+  var fromName=(window.name||'').split(':');
+  var config=window.MILES_EMBED||{};
+  config.kind='electric-island';
+  config.mode=config.mode||(fromName[0]==='miles'&&fromName[2])||query.get('embed')||'app';
+  config.preview=config.mode==='preview';
+  config.active=!config.preview;
+  window.MILES_EMBED=config;
+  document.documentElement.classList.add('portfolio-'+config.mode,'portfolio-'+config.kind);
+  document.documentElement.setAttribute('data-theme','light');
+})();
+</script>
+<style>/* All rules apply only inside the authored project iframe. */
+html.portfolio-preview,html.portfolio-preview body{height:100%;width:100%;overflow:hidden!important;margin:0!important;padding:0!important;scroll-behavior:auto}
+html.portfolio-preview body{pointer-events:none;user-select:none}
+html.portfolio-preview.portfolio-paused *,html.portfolio-preview.portfolio-paused *:before,html.portfolio-preview.portfolio-paused *:after{animation-play-state:paused!important;transition:none!important}
+html.portfolio-preview *,html.portfolio-preview *:before,html.portfolio-preview *:after{cursor:default!important}
+
+/* The original StreetForge canvas and its original scene renderer. */
+html.portfolio-preview.portfolio-streetforge{--topbar:0px;--projectbar:0px}
+html.portfolio-preview.portfolio-streetforge body>:not(#canvas):not(#portfolio-sf-tour):not(script):not(style):not(link){display:none!important}
+html.portfolio-preview.portfolio-streetforge #canvas{position:fixed!important;inset:62px 0 32px!important;width:100%!important;height:calc(100% - 94px)!important;outline:0}
+#portfolio-sf-tour{position:fixed;inset:0;z-index:2100;pointer-events:none;font-family:Inter,system-ui,sans-serif;color:#e7edff;text-align:left}
+#portfolio-sf-tour [hidden]{display:none!important}
+.sf-tour-header{position:absolute;top:0;left:0;right:0;height:36px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 11px;background:#1d2230;border-bottom:1px solid #384053}
+.sf-tour-header strong{font-size:12px;letter-spacing:-.35px;white-space:nowrap}.sf-tour-header strong>span{font-size:9px;font-weight:400;color:#9ba9c3;margin-left:4px}
+.sf-tour-header>div{display:flex;align-items:center;gap:6px}.sf-tour-header button{background:#2b3448;border:1px solid #4a5b78;border-radius:4px;padding:4px 8px;color:#e5eeff;font-size:9px;line-height:1.3}
+.sf-tour-badge{font-size:7px;letter-spacing:.1em;color:#92a9ce;margin-left:3px}
+.sf-tour-project{position:absolute;top:36px;left:0;right:0;height:26px;display:flex;gap:8px;align-items:center;padding:0 12px;background:#191e29;border-bottom:1px solid #30384b}
+.sf-tour-project>span{font-size:7px;letter-spacing:.12em;color:#8694af}.sf-tour-project>button{padding:0;border:0;background:none;color:#d4e1f8;font-size:10px;line-height:1.4}
+.sf-tour-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:7px;width:min(344px,calc(100% - 32px));padding:12px;border:1px solid #547fb9;background:#222a3a;border-radius:9px;box-shadow:0 9px 32px #0007}
+.sf-tour-dialog>strong{font-size:12px;font-weight:600;line-height:1.4;color:#f0f4ff}
+#portfolio-sf-tour #descText{display:block;width:100%;height:48px!important;min-height:0!important;max-height:48px;resize:none;overflow:hidden;box-sizing:border-box;font:10px/15px Inter,system-ui,sans-serif;background:#131a27;color:#e5efff;padding:6px 8px;margin:0;border:1px solid #607ca9;border-radius:5px;caret-color:#99c6ff}
+#portfolio-sf-tour #descCanvas{display:block;width:100%;height:52px!important;min-height:0;margin:0;border:0;border-radius:4px}
+.sf-tour-place{display:flex;justify-content:flex-end}
+#portfolio-sf-tour #descPlace,.sf-tour-name>button{border:1px solid #99beff;background:#92baff;color:#111d31;font:600 10px/1.3 Inter,system-ui,sans-serif;border-radius:5px;padding:6px 11px;min-height:27px;margin:0;float:none}
+.sf-tour-add{position:absolute;left:12px;top:74px;width:180px;padding:10px;border:1px solid #536788;border-radius:8px;background:#222a3a;box-shadow:0 9px 25px #0005;display:flex;flex-direction:column;gap:7px}
+.sf-tour-add>span{font-size:8px;letter-spacing:.1em;color:#acbdd7;margin-bottom:2px}.sf-tour-add>button{display:flex;align-items:center;gap:9px;border:1px solid #445572;border-radius:5px;padding:8px;background:#2b3549;color:#e4edff;font:11px/1.4 Inter,system-ui,sans-serif;text-align:left}.sf-tour-add>button>span{font-size:17px;color:#a8d8b0}.sf-tour-add>button.chosen{border-color:#8ec1ff;background:#334c6b}
+.sf-tour-name input{display:block;width:100%;padding:8px;background:#131a27;border:1px solid #789bc9;border-radius:5px;color:#e5efff;font:12px/1.4 Inter,system-ui,sans-serif}
+.sf-tour-name>button{align-self:flex-end}
+.sf-tour-footer{position:absolute;bottom:0;left:0;right:0;height:32px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 11px;border-top:1px solid #3b465b;background:#1c2330;color:#d3e5ff;font-size:9px;line-height:1.4}
+.sf-tour-dots{display:flex;gap:4px;flex-shrink:0}.sf-tour-dots i{height:3px;width:11px;background:#45516a;border-radius:3px}.sf-tour-dots i.active{background:#91bbff}
+.sf-tour-pointer{position:absolute;top:0;left:0;width:22px;height:27px;z-index:2200;will-change:transform;filter:drop-shadow(0 2px 2px #0005);transition:opacity .25s}.sf-tour-pointer svg{height:27px;width:22px;display:block;overflow:visible}.sf-tour-click{position:absolute;top:-10px;left:-10px;width:24px;height:24px;border:2px solid #b9d4ff;border-radius:50%;opacity:0}.sf-tour-pointer.is-clicking .sf-tour-click{animation:sf-tour-click .44s ease-out}
+@keyframes sf-tour-click{0%{opacity:1;transform:scale(.25)}100%{opacity:0;transform:scale(1.5)}}
+@media(max-width:330px){.sf-tour-header{padding-inline:8px}.sf-tour-header button{padding:4px 6px;font-size:8px}.sf-tour-dialog{padding:10px;gap:6px}.sf-tour-badge{font-size:6px}.sf-tour-footer{font-size:8px;padding-inline:8px}.sf-tour-dots i{width:8px}}
+
+/* Show the authored Treety long section in preview and diagram modes. */
+html.portfolio-preview.portfolio-treety body>header,html.portfolio-preview.portfolio-treety body>footer,
+html.portfolio-diagram.portfolio-treety body>header,html.portfolio-diagram.portfolio-treety body>footer{display:none!important}
+html.portfolio-preview.portfolio-treety main>section:not(#section),html.portfolio-diagram.portfolio-treety main>section:not(#section){display:none!important}
+html.portfolio-preview.portfolio-treety #section>.wrap,html.portfolio-diagram.portfolio-treety #section>.wrap{padding:0!important;max-width:none;margin:0}
+html.portfolio-preview.portfolio-treety #section,html.portfolio-diagram.portfolio-treety #section{border:0}
+html.portfolio-preview.portfolio-treety #section>.wrap>.sec-head,html.portfolio-preview.portfolio-treety #section>.wrap>h2,
+html.portfolio-diagram.portfolio-treety #section>.wrap>.sec-head,html.portfolio-diagram.portfolio-treety #section>.wrap>h2,
+html.portfolio-preview.portfolio-treety .sim-under,html.portfolio-diagram.portfolio-treety .sim-under,
+html.portfolio-preview.portfolio-treety #section>.wrap>details{display:none!important}
+html.portfolio-preview.portfolio-treety main,html.portfolio-preview.portfolio-treety #section,html.portfolio-preview.portfolio-treety #section>.wrap,
+html.portfolio-preview.portfolio-treety .sim,html.portfolio-preview.portfolio-treety .xs-grid,html.portfolio-preview.portfolio-treety .xs-fig{height:100%;width:100%}
+html.portfolio-preview.portfolio-treety .sim{border:0;margin:0;background:#e2e6dd;display:grid;place-items:center}
+html.portfolio-preview.portfolio-treety .sim>:not(.xs-grid),html.portfolio-preview.portfolio-treety .xs-panel{display:none!important}
+html.portfolio-preview.portfolio-treety .xs-grid{display:block!important;border:0}
+html.portfolio-preview.portfolio-treety .xs-fig{display:grid;place-items:center;overflow:hidden!important;border:0}
+html.portfolio-preview.portfolio-treety #xsec{width:100%!important;height:100%!important;min-width:0!important;max-height:100%;display:block}
+html.portfolio-diagram.portfolio-treety #section>.wrap{padding:18px!important}
+html.portfolio-diagram.portfolio-treety .sim{margin:0}
+@media(max-width:650px){html.portfolio-diagram.portfolio-treety #section>.wrap{padding:8px!important}}
+
+/* Electric Island uses its actual outage state machine and SVG schematic. */
+html.portfolio-preview.portfolio-electric-island body>.wrap{height:100%;width:100%;max-width:none;padding:0;display:block}
+html.portfolio-preview.portfolio-electric-island .wrap>:not(#run){display:none!important}
+html.portfolio-preview.portfolio-electric-island #run{display:block;height:100%}
+html.portfolio-preview.portfolio-electric-island #run>.sechead{display:none!important}
+html.portfolio-preview.portfolio-electric-island .story{height:100%;border:0;border-radius:0;padding:7px;background:#e2e8e6;display:grid;place-items:center}
+html.portfolio-preview.portfolio-electric-island .story>:not(.schem){display:none!important}
+html.portfolio-preview.portfolio-electric-island .schem{width:100%;height:100%;overflow:hidden!important;display:grid;place-items:center}
+html.portfolio-preview.portfolio-electric-island #node{min-width:0!important;width:100%!important;height:100%!important;display:block}
+html.portfolio-app.portfolio-electric-island .topbar,html.portfolio-app.portfolio-electric-model .nav{display:none}
+html.portfolio-diagram.portfolio-electric-island .wrap{max-width:none;padding:20px;gap:0}
+html.portfolio-diagram.portfolio-electric-island .wrap>:not(#run){display:none!important}
+html.portfolio-diagram.portfolio-electric-island #run>.sechead{display:none}
+html.portfolio-preview.portfolio-electric-model .app{grid-template-columns:1fr;grid-template-rows:1fr;height:100%}
+html.portfolio-preview.portfolio-electric-model .app>.top,html.portfolio-preview.portfolio-electric-model .panel,
+html.portfolio-preview.portfolio-electric-model .views,html.portfolio-preview.portfolio-electric-model .titleblock{display:none!important}
+html.portfolio-preview.portfolio-electric-model .stage{grid-column:1;grid-row:1;height:100%}
+
+/* A direct workspace URL still offers a route back to Miles' portfolio. */
+.portfolio-return{display:block;position:fixed;right:14px;bottom:14px;z-index:9999;font:12px/1.4 system-ui,sans-serif;background:#233a34;color:#f5f4ee;padding:10px 15px;text-decoration:none;border-radius:24px;box-shadow:0 2px 12px #0002}
+.portfolio-return:focus-visible{outline:3px solid #b4432c;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){html.portfolio-preview *{animation:none!important;transition:none!important}}
+</style>
+
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>How Electric Island Works</title>
+<meta name="description" content="How each Electric Island node senses, decides, takes orders from the grid's computers, and gets overridden by hand.">
+
+
+<style>
+/* Layout: same switchgear console language as the simulator. Single column of numbered sections; the node schematic is the hero instrument. */
+:root{
+  color-scheme:light;
+  --bg:#EDF1F0; --panel:#FFFFFF; --ink:#15211F; --muted:#56655F; --rule:#C7D1CD; --soft:#E2E8E6;
+  --hot:#C98A00; --fault:#C4362B; --accent:#1D5FA8; --ok:#23764F;
+  --i1:#0E8C83; --i2:#7351C2;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Public Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1513; --panel:#16201E; --ink:#E2ECE9; --muted:#93A49F; --rule:#2B3A36; --soft:#1D2926;
+  --hot:#F0B531; --fault:#F0685C; --accent:#6FA9F2; --ok:#4FC28A; --i1:#2EC4B6; --i2:#A38AF0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1513; --panel:#16201E; --ink:#E2ECE9; --muted:#93A49F; --rule:#2B3A36; --soft:#1D2926;
+  --hot:#F0B531; --fault:#F0685C; --accent:#6FA9F2; --ok:#4FC28A; --i1:#2EC4B6; --i2:#A38AF0; color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55}
+[hidden]{display:none!important}
+.wrap{max-width:1240px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:18px 56px;display:grid;gap:44px}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:.01em;text-wrap:balance;margin:0;line-height:1.08}
+h1{font-size:clamp(36px,5.4vw,60px);max-width:22ch}
+h2{font-size:30px}
+h3{font-size:20px}
+p{margin:0;max-width:70ch}
+a{color:var(--accent)}
+a:focus-visible,button:focus-visible,input:focus-visible,label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.topbar{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding-bottom:12px;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+.topbar a{color:var(--ink);text-decoration:none}
+.topbar a:hover{color:var(--accent)}
+.topbar .brand{font-family:var(--display);font-size:22px;font-weight:700;letter-spacing:.05em}
+.topbar .crumb{color:var(--muted)}
+.topbar .grow{flex:1}
+.hero{display:grid;gap:14px}
+.lede{color:var(--muted);font-size:17px}
+.sechead{display:grid;gap:6px}
+.num{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--accent)}
+section{display:grid;gap:16px}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:16px;min-width:0}
+.note{font-size:13px;color:var(--muted)}
+.mono{font-family:var(--mono)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+button{font:inherit;font-size:13.5px;color:var(--ink);background:var(--soft);border:1px solid var(--rule);border-radius:5px;padding:7px 11px;cursor:pointer;text-align:left}
+button:hover{border-color:var(--accent)}
+button[disabled]{opacity:.45;cursor:not-allowed}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.svgt{font-family:var(--body);fill:var(--ink)}
+.svgm{font-family:var(--mono);fill:var(--muted)}
+.svgd{font-family:var(--display);font-weight:600;fill:var(--ink)}
+/* story */
+.story{display:grid;gap:14px}
+.chapters{display:flex;flex-wrap:wrap;gap:6px}
+.chapters button{display:inline-flex;align-items:center;gap:7px;font-size:13px;padding:5px 11px 5px 6px;border-radius:99px}
+.chapters button span{font-family:var(--mono);font-size:11px;width:20px;height:20px;border-radius:50%;display:inline-grid;place-items:center;background:var(--panel);border:1px solid var(--rule)}
+.chapters button.on{background:var(--accent);border-color:var(--accent);color:var(--panel)}
+.chapters button.on span{color:var(--accent);border-color:var(--panel)}
+.chapters button.done span{background:var(--ok);border-color:var(--ok);color:var(--panel)}
+.caption{background:var(--soft);border-radius:8px;padding:14px 16px;display:grid;gap:8px;min-height:128px;align-content:start}
+.capmeta{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center}
+.captime{font-family:var(--mono);font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+.capwho{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.captext{font-size:19px;line-height:1.45;max-width:78ch}
+.storyctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.storyctl .grow{flex:1}
+.storyctl button{font-size:15px;padding:9px 16px}
+.story .schem svg{display:block;width:100%;min-width:760px;height:auto}
+.keyreads{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.kr{border-radius:6px;padding:10px 12px;display:grid;gap:3px;background:var(--soft);min-width:0}
+.kr span{font-size:12.5px;color:var(--muted)}
+.kr b{font-family:var(--display);font-size:26px;font-weight:600;line-height:1.05}
+.kr small{font-size:12.5px;color:var(--muted)}
+.kr.good b{color:var(--ok)} .kr.bad b{color:var(--fault)} .kr.warn b{color:var(--hot)}
+details.more{border:1px solid var(--rule);border-radius:8px;background:var(--panel);min-width:0}
+.wrap,section{grid-template-columns:minmax(0,1fr)}
+details.more>summary{cursor:pointer;list-style:none;padding:13px 16px;font-weight:600;display:flex;justify-content:space-between;align-items:center;gap:12px}
+details.more>summary::-webkit-details-marker{display:none}
+details.more>summary::after{content:"Show";font-family:var(--mono);font-size:11.5px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);flex:none}
+details.more[open]>summary::after{content:"Hide"}
+details.more>summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+details.more>.body{padding:0 16px 16px}
+.story details.more{background:none}
+.lk{font-size:14px;color:var(--muted)}
+.keyrules{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.keyrules li{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;font-size:14px;color:var(--muted)}
+.keyrules b{display:block;color:var(--ink);font-family:var(--display);font-size:18px;font-weight:600;margin-bottom:2px}
+/* run it */
+.run{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:16px;align-items:start}
+.run .schem svg{display:block;width:100%;min-width:760px;height:auto}
+.statusrow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.pill{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;padding:5px 11px;border-radius:99px;border:1.5px solid currentColor;font-weight:500}
+.pill i{width:9px;height:9px;border-radius:50%;background:currentColor;display:inline-block}
+.st-grid{color:var(--hot)} .st-share{color:var(--i1)} .st-alone{color:var(--i2)} .st-lock{color:var(--hot)} .st-fault{color:var(--fault)} .st-off{color:var(--muted)}
+.readouts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px;margin-top:12px}
+.ro{background:var(--soft);border-radius:5px;padding:8px 9px;display:grid;gap:2px;min-width:0}
+.ro span{font-size:11.5px;color:var(--muted)}
+.ro b{font-family:var(--display);font-size:20px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+.ro small{font-family:var(--mono);font-size:11px;color:var(--muted)}
+.side{display:grid;gap:12px}
+.acts{display:grid;gap:6px}
+.acts button{width:100%}
+.ctl{display:flex;gap:6px;flex-wrap:wrap}
+.steps{list-style:none;margin:0;padding:0;display:grid;gap:6px;max-height:420px;overflow-y:auto}
+.steps li{display:grid;grid-template-columns:64px 1fr;gap:4px 10px;padding:8px;border-radius:5px;font-size:13.5px;border:1px solid transparent}
+.steps li time{font-family:var(--mono);font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;padding-top:2px}
+.steps li b{display:block;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.steps li.future{opacity:.35}
+.steps li.now{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{display:inline-block;width:20px;height:0;border-top:3px solid}
+/* try it */
+.try{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start}
+.try svg{display:block;width:100%;height:auto}
+.sliders{display:grid;gap:12px}
+.sliders label{display:grid;grid-template-columns:1fr auto;gap:4px 10px;font-size:13.5px}
+.sliders input{grid-column:1/-1;width:100%;accent-color:var(--accent)}
+.sliders output{font-family:var(--mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.verdict{border-radius:6px;padding:10px 12px;font-size:14px;background:var(--soft)}
+.verdict.go{background:color-mix(in srgb,var(--ok) 14%,transparent);color:var(--ok)}
+.verdict.no{background:color-mix(in srgb,var(--fault) 13%,transparent);color:var(--fault)}
+.verdict.wait{background:color-mix(in srgb,var(--hot) 15%,transparent)}
+/* logic diagram */
+.logic svg{display:block;width:100%;min-width:760px;height:auto}
+/* tables */
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td code,.tag{font-family:var(--mono);font-size:12px;background:var(--soft);padding:2px 6px;border-radius:4px;white-space:nowrap}
+td.cost{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;text-align:right}
+/* talk */
+.ladder{display:grid;gap:0}
+.tier{display:grid;grid-template-columns:200px minmax(0,1fr);gap:14px;align-items:center;padding:12px 14px;border:1px solid var(--rule);border-radius:8px;background:var(--panel)}
+.tier b{font-family:var(--display);font-size:20px;font-weight:600}
+.tier span{font-size:13.5px;color:var(--muted)}
+.link{display:grid;grid-template-columns:200px minmax(0,1fr);gap:14px;padding:8px 14px;align-items:center}
+.link .wire{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11.5px;color:var(--accent);letter-spacing:.04em;text-transform:uppercase}
+.link .wire::before{content:"";width:2px;align-self:stretch;min-height:44px;background:var(--accent);margin-left:20px;margin-right:6px}
+.link dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:3px 12px;font-size:13.5px}
+.link dt{color:var(--muted)} .link dd{margin:0}
+/* override */
+.handles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.handles svg{display:block;width:100%;max-width:240px;height:auto;margin:0 auto 6px}
+.handles .card{display:grid;gap:8px;align-content:start}
+.handles p{font-size:14px;color:var(--muted)}
+footer{border-top:1px solid var(--rule);padding-top:14px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.try{padding:0 0 4px}
+.backlink{font-size:16px;font-weight:600}
+.checks8{list-style:none;margin:10px 0 0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 16px;counter-reset:c;font-size:14px}
+.checks8 li{counter-increment:c;display:grid;grid-template-columns:24px 1fr;gap:6px;min-width:0}
+.checks8 li::before{content:counter(c);font-family:var(--mono);font-size:11px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--soft);border:1px solid var(--rule);color:var(--accent)}
+.hard{list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.hard li{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:12px 14px;font-size:14px;color:var(--muted);min-width:0}
+.hard b{display:block;color:var(--ink);font-family:var(--display);font-size:18px;font-weight:600;margin-bottom:2px}
+@media (max-width:1000px){.run,.try{grid-template-columns:1fr}.readouts{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.handles,.keyrules,.keyreads,.checks8,.hard{grid-template-columns:1fr}.captext{font-size:17px}.readouts{grid-template-columns:1fr 1fr}.tier,.link{grid-template-columns:1fr}.link .wire::before{min-height:20px}}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="topbar" aria-label="Site">
+  <a class="brand" href="/projects/electric-island/">Electric Island</a>
+  <span class="crumb">// How it works</span>
+  <span class="grow"></span>
+  <a href="#run">Run it</a>
+  <a href="#inside">Inside</a>
+  <a href="#talk">Who decides</a>
+  <a href="#override">Override</a>
+  <a href="#rules">Rules</a>
+  <a href="#hard">Hard problems</a>
+  <a href="/projects/electric-island/">&larr; Main page</a>
+</nav>
+
+<header class="hero">
+  <span class="num">How one node works</span>
+  <h1>Any switch can always open. Closing has to earn it.</h1>
+  <p class="lede">Each node is a switch with two small computers. The safety chip can always open it, on its own. Closing needs every check to pass, the handle up and no padlock. Computers can ask a node to close, but never force it, and never switch a home off.</p>
+</header>
+
+<section id="run" aria-labelledby="run-h">
+  <div class="sechead">
+    <span class="num">01</span>
+    <h2 id="run-h">Run it</h2>
+    <p class="note">One home's switch through a whole outage, in six short chapters. Press Play; the parts doing the work light up.</p>
+  </div>
+  <div class="card story">
+    <div class="chapters" id="chapters" role="group" aria-label="Chapters"></div>
+    <div class="caption" aria-live="polite">
+      <div class="capmeta"><span class="pill st-grid" id="pill"><i></i><span id="pilltext">On grid</span></span><span class="captime" id="captime"></span><span class="capwho" id="capwho"></span></div>
+      <p class="captext" id="captext"></p>
+    </div>
+    <div class="storyctl">
+      <button type="button" class="primary" id="r-play">Play</button>
+      <button type="button" id="r-back">&larr; Back</button>
+      <button type="button" id="r-next">Next &rarr;</button>
+      <span class="note" id="r-count"></span>
+      <span class="grow"></span>
+      <button type="button" id="r-reset">Start over</button>
+    </div>
+    <div class="schem scroll"><svg id="node" viewBox="0 0 1000 420" role="img" aria-label="Schematic of a home node between the street wires and the house, showing sensors, switch, handle, chips and the home's loads"></svg></div>
+    <div class="legend">
+      <span><i style="border-color:var(--hot)"></i>Grid power</span>
+      <span><i style="border-color:var(--i1)"></i>Shared with neighbors</span>
+      <span><i style="border-color:var(--i2)"></i>Home's own battery</span>
+      <span><i style="border-color:var(--rule);border-top-style:dashed"></i>No power</span>
+      <span><i style="border-color:var(--fault)"></i>Open wire or fault</span>
+      <span><i style="border-color:var(--accent)"></i>Close wire</span>
+    </div>
+    <div class="keyreads" id="keyreads"></div>
+    <details class="more">
+      <summary>All readings: volts, amps, battery, handle</summary>
+      <div class="body"><div class="readouts" id="readouts"></div></div>
+    </details>
+  </div>
+</section>
+
+<section id="inside" aria-labelledby="in-h">
+  <div class="sechead">
+    <span class="num">02</span>
+    <h2 id="in-h">Inside the node</h2>
+    <p class="note">The switch has two coils: one opens it, one closes it. Who can fire each one is the whole safety design.</p>
+  </div>
+  <div class="card logic scroll">
+    <svg viewBox="0 0 900 300" role="img" aria-label="Logic of the node: three independent ways to open, and a chain of links that must all hold to close">
+      <defs>
+        <marker id="ar-r" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1L9 5L1 9" style="fill:none;stroke:var(--fault);stroke-width:1.6"/></marker>
+        <marker id="ar-b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1L9 5L1 9" style="fill:none;stroke:var(--accent);stroke-width:1.6"/></marker>
+        <marker id="ar-k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M1 1L9 5L1 9" style="fill:none;stroke:var(--ink);stroke-width:1.6"/></marker>
+      </defs>
+      <text x="20" y="24" class="svgd" font-size="18">Opening: any one is enough</text>
+      <g>
+        <rect x="20" y="38" width="268" height="42" rx="5" style="fill:var(--soft);stroke:var(--fault)"/>
+        <text x="32" y="56" class="svgd" font-size="15">Safety chip sees a problem</text>
+        <text x="32" y="72" class="svgm" font-size="10.5">grid lost, fault, overload</text>
+        <rect x="20" y="88" width="268" height="42" rx="5" style="fill:var(--soft);stroke:var(--fault)"/>
+        <text x="32" y="106" class="svgd" font-size="15">Island frequency below shed limit</text>
+        <text x="32" y="122" class="svgm" font-size="10.5">read locally, no message</text>
+        <rect x="20" y="138" width="268" height="42" rx="5" style="fill:var(--soft);stroke:var(--ink)"/>
+        <text x="32" y="156" class="svgd" font-size="15">Handle pulled down</text>
+        <text x="32" y="172" class="svgm" font-size="10.5">by hand, no electricity</text>
+      </g>
+      <path d="M288 59H314V84H338" style="fill:none;stroke:var(--fault);stroke-width:2" marker-end="url(#ar-r)"/>
+      <path d="M288 109H314V84" style="fill:none;stroke:var(--fault);stroke-width:2"/>
+      <rect x="340" y="62" width="170" height="44" rx="5" style="fill:var(--panel);stroke:var(--fault);stroke-width:1.5"/>
+      <text x="425" y="81" text-anchor="middle" class="svgd" font-size="15">Trip coil</text>
+      <text x="425" y="97" text-anchor="middle" class="svgm" font-size="10.5">energy from supercap</text>
+      <path d="M510 84H628" style="fill:none;stroke:var(--fault);stroke-width:2" marker-end="url(#ar-r)"/>
+      <path d="M288 159H628" style="fill:none;stroke:var(--ink);stroke-width:2;stroke-dasharray:7 5" marker-end="url(#ar-k)"/>
+      <text x="445" y="150" text-anchor="middle" class="svgm" font-size="10.5">mechanical linkage</text>
+      <rect x="630" y="50" width="250" height="124" rx="6" style="fill:var(--panel);stroke:var(--ink);stroke-width:1.5"/>
+      <text x="755" y="100" text-anchor="middle" class="svgd" font-size="19">Contacts open</text>
+      <text x="755" y="120" text-anchor="middle" class="svgm" font-size="10.5">gap shows in the window</text>
+
+      <text x="20" y="222" class="svgd" font-size="18">Closing: every link in the chain must hold</text>
+      <g>
+        <rect x="20" y="238" width="122" height="48" rx="5" style="fill:var(--soft);stroke:var(--accent)"/>
+        <text x="81" y="258" text-anchor="middle" class="svgd" font-size="15">Main chip</text>
+        <text x="81" y="275" text-anchor="middle" class="svgm" font-size="10.5">all 8 checks pass</text>
+        <rect x="166" y="238" width="122" height="48" rx="5" style="fill:var(--soft);stroke:var(--accent)"/>
+        <text x="227" y="258" text-anchor="middle" class="svgd" font-size="15">Safety chip</text>
+        <text x="227" y="275" text-anchor="middle" class="svgm" font-size="10.5">close enable on</text>
+        <rect x="312" y="238" width="122" height="48" rx="5" style="fill:var(--soft);stroke:var(--accent)"/>
+        <text x="373" y="258" text-anchor="middle" class="svgd" font-size="15">Handle</text>
+        <text x="373" y="275" text-anchor="middle" class="svgm" font-size="10.5">up</text>
+        <rect x="458" y="238" width="122" height="48" rx="5" style="fill:var(--soft);stroke:var(--accent)"/>
+        <text x="519" y="258" text-anchor="middle" class="svgd" font-size="15">Padlock</text>
+        <text x="519" y="275" text-anchor="middle" class="svgm" font-size="10.5">none on hasp</text>
+        <rect x="604" y="238" width="122" height="48" rx="5" style="fill:var(--panel);stroke:var(--accent);stroke-width:1.5"/>
+        <text x="665" y="258" text-anchor="middle" class="svgd" font-size="15">Close coil</text>
+        <text x="665" y="275" text-anchor="middle" class="svgm" font-size="10.5">fires in sync</text>
+        <rect x="750" y="238" width="130" height="48" rx="5" style="fill:var(--panel);stroke:var(--ink);stroke-width:1.5"/>
+        <text x="815" y="258" text-anchor="middle" class="svgd" font-size="15">Contacts close</text>
+        <text x="815" y="275" text-anchor="middle" class="svgm" font-size="10.5">home joins</text>
+      </g>
+      <path d="M142 262H164M288 262H310M434 262H456M580 262H602" style="fill:none;stroke:var(--accent);stroke-width:2"/>
+      <path d="M726 262H746" style="fill:none;stroke:var(--accent);stroke-width:2" marker-end="url(#ar-b)"/>
+    </svg>
+  </div>
+  <p class="note">The handle and padlock are physical gaps in the close wire, so no bug or hacked command can bridge them. The trip coil runs on a supercapacitor, so opening works even with no power anywhere.</p>
+  <div class="card">
+    <h3>The 8 checks before any switch closes</h3>
+    <ol class="checks8">
+      <li>No padlock on the handle</li>
+      <li>No fault lockout, and a clean test pulse if the far side is dead</li>
+      <li>A signed, unexpired request, or the handle pushed up</li>
+      <li>At least 15 seconds since this switch last moved</li>
+      <li>Voltage difference within limits</li>
+      <li>Frequency difference within limits</li>
+      <li>Waves lined up (phase angle) within limits</li>
+      <li>Enough steady power on every phase: 115% of the load</li>
+    </ol>
+    <p class="note" style="margin-top:10px">Limits from IEEE 1547 tighten as islands grow: 0.3 Hz, 10% and 20° under 500 kVA; 0.2 Hz, 5% and 15° up to 1.5 MVA; 0.1 Hz, 3% and 10° above that.</p>
+  </div>
+
+  <details class="more">
+    <summary>Try it: line up the waves before closing</summary>
+    <div class="body">
+  <div class="try" id="try">
+    <div>
+            <p class="note" style="margin:4px 0 10px">Before closing, the node compares the street's voltage wave with the home's. If they are out of step when the contacts meet, a surge rips through both sides. Set how far apart the two sides are, then ask the node to close. It waits until the waves line up within 20°. The 60 Hz wiggle is frozen so you can see the shapes; the drift between them runs at real speed.</p>
+      <svg id="waves" viewBox="0 0 640 220" role="img" aria-label="Two voltage waves, street side and home side, with a phase-angle dial"></svg>
+    </div>
+    <div class="sliders">
+      <label for="s-df">Frequency difference <output id="o-df">0.12 Hz</output><input type="range" id="s-df" min="0" max="0.6" step="0.02" value="0.12"></label>
+      <label for="s-dv">Voltage difference <output id="o-dv">3 %</output><input type="range" id="s-dv" min="0" max="20" step="1" value="3"></label>
+      <div class="ctl"><button type="button" class="primary" id="s-close">Ask to close</button><button type="button" id="s-reset">Reset</button></div>
+      <div class="verdict" id="s-verdict">Open. Waiting for a close request.</div>
+      <p class="note">These are IEEE 1547's limits for a street-sized island under 500 kVA. Bigger islands use the tighter limits above.</p>
+    </div>
+  </div>
+    </div>
+  </details>
+
+  <details class="more">
+    <summary>Every part and its cost</summary>
+    <div class="body scroll">
+    <table>
+      <thead><tr><th>Part</th><th>What it is</th><th>What it does</th><th>Example class</th><th style="text-align:right">Cost</th></tr></thead>
+      <tbody>
+        <tr><td><code>CT_GRID</code> <code>CT_HOME</code></td><td>Four current sensors</td><td>One on each 120 V hot leg, on each side of the switch. The two sides cross-check each other, and the safety chip reads them through its own comparator, so one failure can't blind it.</td><td>Split-core current transformers</td><td class="cost">$16.00</td></tr>
+        <tr><td><code>VSENSE_x2</code></td><td>Voltage taps</td><td>Measure voltage on each side. Comparing the two tells the node whether the street is live and whether the waves line up.</td><td>Resistor dividers</td><td class="cost">in board</td></tr>
+        <tr><td><code>METERING_IC</code></td><td>Two energy-metering chips</td><td>One per side. Each samples both legs about 8,000 times a second and works out volts, amps, frequency and the phase angle between the two sides.</td><td>ADE7953 class</td><td class="cost">$6.00</td></tr>
+        <tr><td><code>SAFETY_MCU</code></td><td>Safety microcontroller</td><td>Can only open the switch. Watches for grid loss, faults and overloads, holds the close-enable line, and checks the main chip's heartbeat. Its program is fixed at the factory and can't be changed over the air.</td><td>Arm Cortex-M0+ class</td><td class="cost">$0.80</td></tr>
+        <tr><td><code>MAIN_MCU</code></td><td>Main microcontroller</td><td>Runs the rules: the eight-check close permit, the night caps, status reports, and requests from the computers. Accepts only signed firmware updates.</td><td>ESP32-S3 class</td><td class="cost">$3.00</td></tr>
+        <tr><td><code>SECURE_CHIP</code></td><td>Secure element</td><td>Keeps the node's private key locked in hardware. Signs every report and checks every incoming command's signature, age and serial number.</td><td>ATECC608 class</td><td class="cost">$1.00</td></tr>
+        <tr><td><code>RADIO_900</code></td><td>Mesh radio</td><td>Talks to the regional computer over 900 MHz, hopping through other nodes, the way smart meters already do.</td><td>Wi-SUN class module</td><td class="cost">$7.00</td></tr>
+        <tr><td><code>PLC_MODEM</code></td><td>Powerline modem</td><td>Sends data over the 240 V wires to the transformer node. It connects on the street side, so it keeps working when the switch is open or the wires are dead.</td><td>G3-PLC class</td><td class="cost">$6.00</td></tr>
+        <tr><td><code>CLOCK_RTC</code></td><td>Real-time clock</td><td>Keeps time through outages for the night caps. Drifts about a minute a year and is checked against the transformer node's GPS time.</td><td>DS3231 class</td><td class="cost">$1.50</td></tr>
+        <tr><td><code>SUPERCAP</code></td><td>Supercapacitor</td><td>Stores enough energy to fire the trip coil several times with no power anywhere, and keeps the clock running for weeks.</td><td>5 F supercapacitor</td><td class="cost">$4.00</td></tr>
+        <tr><td><code>PSU_DUAL</code></td><td>Power supply</td><td>Powers the node from whichever side has voltage: the street or the home's battery.</td><td>On the board</td><td class="cost">in board</td></tr>
+        <tr><td><code>CONTACTOR_200A</code></td><td>Two-pole latching contactor</td><td>The switch itself, opening both hot legs at once. Latching means it stays where it is without power. Rated to break 200 A of normal load; for a big grid short it waits for the utility fuse to clear first, so it never welds itself shut.</td><td>Meter-disconnect latching relay</td><td class="cost">$40.00</td></tr>
+        <tr><td><code>HANDLE</code> <code>HASP</code></td><td>Manual handle and padlock hasp</td><td>Down pulls the contacts apart through a mechanical linkage. Up asks the node to close. A padlock through the hasp blocks the handle.</td><td>Molded lever</td><td class="cost">$14.00</td></tr>
+        <tr><td><code>INTERLOCK_SW</code></td><td>Interlock switch</td><td>Sits in the close-coil wire and opens whenever the handle is down or padlocked, so the coil can't get current.</td><td>Snap-action switch</td><td class="cost">with handle</td></tr>
+        <tr><td><code>WINDOW</code></td><td>Viewing window</td><td>Lets a lineworker see the contacts apart with their own eyes.</td><td>Clear cover</td><td class="cost">with handle</td></tr>
+        <tr><td><code>STATUS_LIGHT</code></td><td>Status light and display</td><td>Green: closed. Amber: waiting, with the reason in words. Red: locked out.</td><td>LED and small display</td><td class="cost">in board</td></tr>
+        <tr><td><code>LOAD_RELAYS</code></td><td>Load-control outputs</td><td>Switch the AC, water heater and EV charger circuits in the panel to enforce caps. The essentials circuit (fridge, fan, a light, medical) is never switched.</td><td>Drivers for panel relays</td><td class="cost">$30&ndash;60 in panel</td></tr>
+      </tbody>
+    </table>
+    <p class="note" style="margin-top:10px">Node hardware comes to about $143 with the housing, board and assembly. The home's own main breaker still protects the wiring inside the house; the node only manages the connection to the street.</p>
+  </div>
+  </details>
+</section>
+
+<section id="talk" aria-labelledby="talk-h">
+  <div class="sechead">
+    <span class="num">03</span>
+    <h2 id="talk-h">Who decides what</h2>
+    <p class="note">Fast decisions at the bottom, big-picture ones at the top. If any link fails, the layers below keep working.</p>
+  </div>
+  <div class="ladder">
+    <div class="tier"><b>Central computer</b><span>One per utility. Night plans, the base link, reconnecting, island battery trading, and alert-day floors.</span></div>
+    <div class="link"><span class="wire">Fiber or cellular</span><span class="lk">If it fails, regions keep their last plan.</span></div>
+    <div class="tier"><b>Regional computer</b><span>Merges street islands and shares energy between them.</span></div>
+    <div class="link"><span class="wire">900 MHz mesh radio</span><span class="lk">If it fails, each street runs its own island.</span></div>
+    <div class="tier"><b>Transformer node</b><span>About 15 homes on one phase. Runs the island battery, keeps its floor locked, and lets one home join at a time.</span></div>
+    <div class="link"><span class="wire">Powerline signal</span><span class="lk">If it fails, homes with batteries run alone.</span></div>
+    <div class="tier"><b>Home node</b><span>In the meter socket. Has the final say over its own switch.</span></div>
+    <div class="link"><span class="wire">The wires themselves</span><span class="lk">Frequency drops as storage drains. Every node reads it, no message needed.</span></div>
+  </div>
+</section>
+
+<section id="override" aria-labelledby="ov-h">
+  <div class="sechead">
+    <span class="num">04</span>
+    <h2 id="ov-h">Manual override</h2>
+    <p class="note">Every node has the same handle and its own padlock hasp, from the home switch to the power-line recloser. Section nodes also get a visible-break disconnect for crews.</p>
+  </div>
+  <div class="handles">
+    <div class="card">
+      <svg viewBox="0 0 200 150" role="img" aria-label="Handle down, contacts open">
+        <rect x="80" y="8" width="40" height="84" rx="6" style="fill:var(--soft);stroke:var(--muted)"/>
+        <rect x="84" y="66" width="32" height="22" rx="4" style="fill:var(--ink)"/>
+        <circle cx="134" cy="78" r="6" style="fill:none;stroke:var(--muted);stroke-width:2"/>
+        <line x1="100" y1="92" x2="100" y2="112" style="stroke:var(--ink);stroke-width:2;stroke-dasharray:4 3"/>
+        <line x1="30" y1="128" x2="72" y2="128" style="stroke:var(--rule);stroke-width:4;stroke-dasharray:6 4"/>
+        <circle cx="76" cy="128" r="4" style="fill:var(--ink)"/>
+        <line x1="76" y1="128" x2="116" y2="112" style="stroke:var(--ink);stroke-width:4;stroke-linecap:round"/>
+        <circle cx="128" cy="128" r="4" style="fill:var(--ink)"/>
+        <line x1="132" y1="128" x2="172" y2="128" style="stroke:var(--rule);stroke-width:4;stroke-dasharray:6 4"/>
+      </svg>
+      <h3>Handle down: open</h3>
+      <p>A lever pulls the contacts apart. No chip or battery involved, so it always works. Anyone can do it.</p>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 200 150" role="img" aria-label="Handle down with padlock, close-coil wire broken">
+        <rect x="80" y="8" width="40" height="84" rx="6" style="fill:var(--soft);stroke:var(--muted)"/>
+        <rect x="84" y="66" width="32" height="22" rx="4" style="fill:var(--ink)"/>
+        <circle cx="134" cy="78" r="6" style="fill:none;stroke:var(--hot);stroke-width:2.5"/>
+        <rect x="138" y="80" width="22" height="18" rx="3" style="fill:var(--hot)"/>
+        <path d="M142 80v-6a7 7 0 0 1 14 0v6" style="fill:none;stroke:var(--hot);stroke-width:2.5"/>
+        <line x1="100" y1="92" x2="100" y2="112" style="stroke:var(--ink);stroke-width:2;stroke-dasharray:4 3"/>
+        <line x1="30" y1="128" x2="72" y2="128" style="stroke:var(--rule);stroke-width:4;stroke-dasharray:6 4"/>
+        <circle cx="76" cy="128" r="4" style="fill:var(--ink)"/>
+        <line x1="76" y1="128" x2="116" y2="112" style="stroke:var(--ink);stroke-width:4;stroke-linecap:round"/>
+        <circle cx="128" cy="128" r="4" style="fill:var(--ink)"/>
+        <line x1="132" y1="128" x2="172" y2="128" style="stroke:var(--rule);stroke-width:4;stroke-dasharray:6 4"/>
+        <line x1="12" y1="22" x2="52" y2="22" style="stroke:var(--accent);stroke-width:2"/>
+        <path d="M54 16l10 12M64 16l-10 12" style="stroke:var(--fault);stroke-width:2.5"/>
+        <text x="12" y="44" class="svgm" font-size="10">close</text>
+        <text x="12" y="57" class="svgm" font-size="10">wire cut</text>
+      </svg>
+      <h3>Down with a padlock: locked</h3>
+      <p>The hasp holds the handle down and the close wire is cut. Only the padlock's owner can release it.</p>
+    </div>
+    <div class="card">
+      <svg viewBox="0 0 200 150" role="img" aria-label="Handle up, node asks to close and shows a status light">
+        <rect x="80" y="8" width="40" height="84" rx="6" style="fill:var(--soft);stroke:var(--muted)"/>
+        <rect x="84" y="12" width="32" height="22" rx="4" style="fill:var(--ink)"/>
+        <circle cx="134" cy="78" r="6" style="fill:none;stroke:var(--muted);stroke-width:2"/>
+        <line x1="100" y1="92" x2="100" y2="112" style="stroke:var(--ink);stroke-width:2;stroke-dasharray:4 3"/>
+        <line x1="30" y1="128" x2="72" y2="128" style="stroke:var(--hot);stroke-width:4"/>
+        <circle cx="76" cy="128" r="4" style="fill:var(--ink)"/>
+        <line x1="76" y1="128" x2="128" y2="128" style="stroke:var(--ink);stroke-width:4;stroke-linecap:round"/>
+        <circle cx="128" cy="128" r="4" style="fill:var(--ink)"/>
+        <line x1="132" y1="128" x2="172" y2="128" style="stroke:var(--hot);stroke-width:4"/>
+        <circle cx="20" cy="28" r="6" style="fill:var(--ok)"/>
+        <text x="30" y="32" class="svgm" font-size="10">closed</text>
+        <circle cx="20" cy="52" r="6" style="fill:var(--hot)"/>
+        <text x="30" y="56" class="svgm" font-size="10">waiting</text>
+      </svg>
+      <h3>Handle up: asks to close</h3>
+      <p>Up doesn't touch the contacts. It asks the node to close, and the node runs the same 8 checks. Amber means waiting, with the reason shown.</p>
+    </div>
+  </div>
+<details class="more">
+    <summary>Who can do what</summary>
+    <div class="body scroll">
+    <table>
+      <thead><tr><th>Who</th><th>Can</th><th>Can't</th></tr></thead>
+      <tbody>
+        <tr><td>Homeowner</td><td>Pull the handle down any time. Push it up to ask for a close. Register medical devices so they are never capped. Set the EV's driving reserve and the home battery's backup reserve.</td><td>Force a close past a failed check. Remove a crew's padlock.</td></tr>
+        <tr><td>Line crew</td><td>Padlock any node: home, transformer or section. Ground the lines. Reset a fault lockout with a utility key after a test pulse comes back clean.</td><td>Close a switch past a failed check. Even after their own reset, the line must pass a test pulse first.</td></tr>
+        <tr><td>Utility operator</td><td>Pick the night plan from a fixed menu, at most once an hour. Ask switches to close. Put an area on storm hold, which blocks every automatic close there.</td><td>Open a home remotely. Close anything past a padlock or a failed check.</td></tr>
+        <tr><td>Base commander</td><td>Open or padlock the base boundary. Approve lending the base's spare power.</td><td>Be forced to lend. The base always powers its own mission first.</td></tr>
+        <tr><td>Firefighter</td><td>Pull any home handle down to kill power to a burning house's street connection. Padlock it if needed.</td><td>Nothing extra. Off is always available to anyone.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </details>
+</section>
+
+<section id="rules" aria-labelledby="rules-h">
+  <div class="sechead">
+    <span class="num">05</span>
+    <h2 id="rules-h">Rules no computer can change</h2>
+    <p class="note">The key rules live in hardware or the safety chip's factory-fixed program, not in software anyone can update.</p>
+  </div>
+  <ul class="keyrules">
+    <li><b>Opening never needs permission.</b> Two separate paths, neither waits for a message.</li>
+    <li><b>A padlock blocks closing.</b> It physically cuts the close wire.</li>
+    <li><b>No computer can switch a home off.</b> Only its own readings, the handle or a padlock can.</li>
+    <li><b>Never join two sides out of step.</b> Both chips must agree the waves line up.</li>
+    <li><b>Never power a dead line blind.</b> A test pulse must come back clean first.</li>
+    <li><b>Emergency energy can't be sold.</b> The island battery's floor only discharges while cut off from the grid.</li>
+  </ul>
+  <details class="more">
+    <summary>All 16 rules and where each lives</summary>
+    <div class="body scroll">
+    <table>
+      <thead><tr><th>Rule</th><th>Where it lives</th><th>Why it can't be bypassed</th></tr></thead>
+      <tbody>
+        <tr><td>Opening never needs permission</td><td>Safety chip and the mechanical handle</td><td>Two independent paths, and neither waits for a message. The trip coil runs on the supercapacitor.</td></tr>
+        <tr><td>A padlock blocks closing</td><td>Interlock switch in the close-coil wire</td><td>It is a physical gap in the wire. No software can put current across it.</td></tr>
+        <tr><td>No remote command can switch a home off</td><td>Home node firmware: there is no OPEN action</td><td>Homes open only on their own readings (grid lost, fault, frequency below the shed limit), the handle, or a padlock. A stolen key can't cut anyone's power.</td></tr>
+        <tr><td>Never close two sides that are out of step</td><td>Main chip permit and safety chip close-enable</td><td>Both chips measure independently and both must agree: under 0.3 Hz, 10% voltage and 20° apart.</td></tr>
+        <tr><td>Never power a dead line without a clean test pulse</td><td>Main chip permit, transformer and section nodes</td><td>A short or a grounded line shows up in the pulse, and the switch locks out until a crew resets it.</td></tr>
+        <tr><td>Clear faults without relying on fuses</td><td>Safety chip and transformer node</td><td>On grid power, above its rating the contactor waits for the utility fuse to clear, so it can't weld shut. In an island there's no big fault current, so nodes compare current in and out and trip within 60 ms (90 ms on a backup signal with radios down).</td></tr>
+        <tr><td>Streets on different phases join only through a three-phase leader</td><td>Section, transformer and base nodes</td><td>Each street sits on one phase. Without the grid, a close onto the power line needs a three-phase source, such as the base, in the merged island.</td></tr>
+        <tr><td>One close at a time per island</td><td>Transformer node and regional computer</td><td>Each island hands out one close at a time, so two switches can't both count the same spare power.</td></tr>
+        <tr><td>Night plans come only from a fixed menu</td><td>Main chip firmware</td><td>Plans are stored at the factory, change at most once an hour, and never go below the 0.2 kW essentials circuit, which has no relay at all.</td></tr>
+        <tr><td>Never feed power back into a dead substation</td><td>Section and base boundary nodes</td><td>They read voltage on the substation side and refuse any close that would energize it from an island.</td></tr>
+        <tr><td>Never cap a home below 0.2 kW, and never cap registered medical devices</td><td>Main chip firmware and the panel wiring</td><td>The essentials circuit has no relay on it at all, so there is nothing to switch off. If an island must drop whole homes to survive, homes with registered medical devices go last.</td></tr>
+        <tr><td>Never sell the island battery's emergency floor</td><td>Island battery controller, wired to the transformer switch</td><td>Below 10 kWh it can discharge only while the transformer switch is open. An open switch means no path to the grid, so that energy can only power the island.</td></tr>
+        <tr><td>Never drain an EV below its owner's reserve</td><td>The EV's two-way charger</td><td>The owner sets the reserve (40% here). The charger stops sharing there, so the car can always be driven away.</td></tr>
+        <tr><td>One move per 15 seconds per switch, except opening for safety</td><td>Main chip</td><td>Stops islands from flapping. Safety opens skip the wait.</td></tr>
+        <tr><td>At most 5 requests a minute per node</td><td>Secure chip and main chip</td><td>A flood of valid commands still can't rattle switches.</td></tr>
+        <tr><td>The safety chip's program can't be changed over the air</td><td>Factory-fixed memory</td><td>Firmware updates reach only the main chip, and only when signed with the utility's key.</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </details>
+  <details class="more">
+    <summary>If a part fails, the switch holds or opens</summary>
+    <div class="body scroll">
+    <table>
+      <thead><tr><th>What fails</th><th>What the node does</th><th>Result</th></tr></thead>
+      <tbody>
+        <tr><td>Main chip crashes</td><td>A watchdog restarts it within a second. The safety chip keeps protecting. No closes happen until the main chip is back.</td><td>Home stays as it was</td></tr>
+        <tr><td>Safety chip fails</td><td>The main chip notices the missing heartbeat, blocks every close, holds the switch where it is, and reports "service needed". The battery inverter's own built-in anti-islanding still protects the street.</td><td>No new islanding at this home until it is fixed</td></tr>
+        <tr><td>Metering chip fails</td><td>Readings stop or look impossible, so the main chip blocks closes. The safety chip still reads the sensors through its own comparator.</td><td>Safe, open or closed as it was</td></tr>
+        <tr><td>A current sensor fails</td><td>The two sides disagree in a way physics doesn't allow. The node blocks closes and reports it.</td><td>Safe</td></tr>
+        <tr><td>Contacts weld shut</td><td>After a trip, current is still flowing. The node reports "welded", and the transformer node opens upstream.</td><td>The next node up isolates the street</td></tr>
+        <tr><td>Node loses all power</td><td>The latching contactor stays where it is. If the grid is lost at the same time, the supercapacitor fires the trip.</td><td>Open is always reachable</td></tr>
+        <tr><td>Radio fails</td><td>Messages go over the powerline signal to the transformer node instead.</td><td>Full function within the 15-home group</td></tr>
+        <tr><td>Radio and powerline both fail</td><td>The node works alone. Homes with batteries island themselves; no merges happen.</td><td>Safe, with less shared power</td></tr>
+        <tr><td>Clock is wrong</td><td>It is checked against the transformer node's GPS time. If it is off by more than 5 minutes, the node uses the strictest normal cap, 0.5 kW, until it is fixed.</td><td>Storage is still protected by the frequency floor</td></tr>
+        <tr><td>Lead battery fails</td><td>The next-strongest grid-forming battery takes over voltage and frequency in about 20 ms.</td><td>Island stays up</td></tr>
+        <tr><td>A firmware bug</td><td>The rules that matter for safety live in the safety chip and the interlock wiring.</td><td>A bug can't close past a padlock or into a fault</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </details>
+</section>
+
+<section id="hard" aria-labelledby="hard-h">
+  <div class="sechead">
+    <span class="num">06</span>
+    <h2 id="hard-h">The hard problems, and the plan for each</h2>
+    <p class="note">Islanding is the easy part. These make it safe on real wires.</p>
+  </div>
+  <ul class="hard">
+    <li><b>Phases</b>Streets sit on different phases, so they join over the power line only with a three-phase leader like the base.</li>
+    <li><b>Faults inside an island</b>Batteries can't blow a fuse, so nodes compare current in and out and trip within 60 ms.</li>
+    <li><b>Crew safety</b>A padlock on every node, visible-break disconnects, and grounds that fail every test pulse. Lockout rules get written with the utility.</li>
+    <li><b>Batteries on utility wires</b>The utility runs the bigger nodes and island batteries. Home batteries and EVs join through its program.</li>
+    <li><b>Inrush</b>An island battery ramps a dead transformer's voltage up over about a second.</li>
+    <li><b>Cold-load pickup</b>Homes rejoin one at a time; each AC waits a random 0 to 5 minutes.</li>
+    <li><b>Two closes at once</b>Each island approves one close at a time, so no spare power is counted twice.</li>
+    <li><b>Leader failure</b>Every battery helps hold the grid, so the next one takes the lead in about 20 ms.</li>
+  </ul>
+  <p class="note">Inrush, leader handover and phase balance still need a circuit model and bench tests.</p>
+  <p class="backlink"><a href="/projects/electric-island/">&larr; Back to the main page and the simulator</a></p>
+</section>
+
+<footer><span>Electric Island · nested islanding grid</span><span>Concept explainer · not for construction</span></footer>
+</div>
+<script>
+(function(){
+const $=id=>document.getElementById(id);
+const DELAY=1900;
+const START=()=>({street:'grid',closed:true,handle:'up',lock:false,flock:false,inv:'follow',ac:'on',ev:'on',wh:'on',batt:82});
+let S=START(),hi=new Set(),seq=null,timer=null,playing=true;
+
+function homeLive(){
+  if(S.closed&&(S.street==='grid'||S.street==='island'))return S.street;
+  if(S.closed&&S.street==='fault-live')return 'fault';
+  if(!S.closed&&(S.inv==='form'))return 'own';
+  return 'dead';}
+function streetKind(){return S.street==='grid'?'grid':S.street==='island'?'island':S.street==='fault-live'?'fault':null;}
+const COL={grid:'var(--hot)',island:'var(--i1)',own:'var(--i2)',fault:'var(--fault)'};
+function status(){
+  if(S.lock)return['Locked by crew','st-lock'];
+  if(S.flock)return['Fault lockout','st-fault'];
+  if(S.closed&&S.street==='grid')return['On grid','st-grid'];
+  if(S.closed&&S.street==='island')return['Sharing with neighbors','st-share'];
+  if(!S.closed&&S.inv==='form')return['Islanded alone','st-alone'];
+  if(S.closed&&S.street==='fault-live')return['Fault on street','st-fault'];
+  return['No power','st-off'];}
+
+function wire(d,kind,w,id){const c=kind?COL[kind]:'var(--rule)';const h=id&&hi.has(id);
+  return `<path d="${d}" style="fill:none;stroke:${c};stroke-width:${(w||4)+(h?1.5:0)};${kind?'':'stroke-dasharray:7 5'}"/>`;}
+function sig(d,color,id,dash){const h=hi.has(id);
+  return `<path d="${d}" style="fill:none;stroke:${h?color:color};stroke-width:${h?3.2:1.4};opacity:${h?1:.55};${dash&&!h?'stroke-dasharray:4 4':''}"/>`;}
+function chip(id,x,y,w,h,title,sub,accent){const on=hi.has(id);
+  return `<g style="opacity:${hi.size&&!on?.32:1}"><rect x="${x}" y="${y}" width="${w}" height="${h}" rx="5" style="fill:${on?'color-mix(in srgb,var(--accent) 16%,var(--panel))':'var(--panel)'};stroke:${on?'var(--accent)':(accent||'var(--muted)')};stroke-width:${on?2.6:1.1}"/>`+
+  `<text x="${x+w/2}" y="${y+(sub?h/2-1:h/2+5)}" text-anchor="middle" class="svgd" font-size="${w<70?12.5:16}">${title}</text>`+
+  (sub?`<text x="${x+w/2}" y="${y+h/2+14}" text-anchor="middle" class="svgm" font-size="10.5">${sub}</text>`:'')+'</g>';}
+
+function draw(){
+  const sk=streetKind(),hk=homeLive(),hkC=hk==='dead'?null:hk;let o='';
+  o+=`<text x="20" y="24" class="svgm" font-size="11">RADIO TO REGIONAL COMPUTER</text>`;
+  o+=`<path d="M204 38a9 9 0 0 1 9 9M204 30a17 17 0 0 1 17 17" style="fill:none;stroke:${hi.has('xfmr')||hi.has('radio')?'var(--accent)':'var(--muted)'};stroke-width:1.6"/>`;
+  o+=chip('xfmr',20,40,180,60,'Transformer node T3','50 kWh island battery');
+  o+=chip('neighbors',20,250,180,56,'14 neighbor homes','solar, batteries, EVs');
+  o+=wire('M110 100V190H220',sk,4,'street')+wire('M110 190V250',sk,4,'street');
+  o+=`<text x="124" y="182" class="svgm" font-size="11">STREET 240 V</text>`;
+  if(S.street.startsWith('fault'))o+=`<path d="M158 183l14 14M172 183l-14 14" style="stroke:var(--fault);stroke-width:3"/><text x="165" y="216" text-anchor="middle" class="svgm" font-size="10" style="fill:var(--fault)">short</text>`;
+  o+=`<rect x="220" y="60" width="460" height="340" rx="14" style="fill:none;stroke:var(--ink);stroke-width:1.4"/>`;
+  o+=`<text x="234" y="78" class="svgm" font-size="11">HOME NODE</text>`;
+  o+=wire('M220 190H345',sk,4,'street')+wire('M475 190H712',hkC,4,'home');
+  /* PLC coupling */
+  o+=sig('M416 368V384H230V190','var(--accent)','plcline',true);
+  o+=`<text x="238" y="379" class="svgm" font-size="10.5">couples to street wires</text>`;
+  /* sensors */
+  const sens=(x,lab)=>`<circle cx="${x}" cy="190" r="10" style="fill:var(--panel);stroke:var(--accent);stroke-width:2"/><text x="${x}" y="172" text-anchor="middle" class="svgm" font-size="11">${lab}</text>`;
+  const vs=(x)=>`<circle cx="${x}" cy="190" r="4.5" style="fill:var(--accent)"/><text x="${x}" y="176" text-anchor="middle" class="svgm" font-size="11">V</text>`;
+  o+=sens(270,'CT')+vs(305)+sens(585,'CT')+vs(618);
+  o+=sig('M270 200V232M305 194V232M585 200V232M618 194V232M270 232H618','var(--accent)','sense',true);
+  o+=`<text x="318" y="228" class="svgm" font-size="10.5">sensors</text>`;
+  /* contactor */
+  const cOn=hi.has('contactor'),wOn=hi.has('window');
+  o+=`<g style="opacity:${hi.size&&!(cOn||wOn)?.45:1}">`;
+  o+=`<text x="345" y="158" class="svgm" font-size="11">CONTACTOR</text>`;
+  o+=`<rect x="345" y="165" width="130" height="50" rx="5" style="fill:var(--panel);stroke:${cOn?'var(--accent)':'var(--ink)'};stroke-width:${cOn?2.6:1.4}"/>`;
+  o+=`<rect x="358" y="171" width="104" height="38" rx="3" style="fill:none;stroke:${wOn?'var(--accent)':'var(--muted)'};stroke-width:${wOn?2:1};stroke-dasharray:4 3"/>`;
+  o+=`<text x="364" y="182" class="svgm" font-size="10.5">window</text>`;
+  o+=`<circle cx="374" cy="194" r="4" style="fill:var(--ink)"/><circle cx="446" cy="194" r="4" style="fill:var(--ink)"/>`;
+  o+=S.closed?`<line x1="374" y1="194" x2="446" y2="194" style="stroke:var(--ink);stroke-width:4;stroke-linecap:round"/>`:`<line x1="374" y1="194" x2="436" y2="176" style="stroke:var(--ink);stroke-width:4;stroke-linecap:round"/>`;
+  o+='</g>';
+  /* handle */
+  const hOn=hi.has('handle');
+  o+=`<g style="opacity:${hi.size&&!hOn?.45:1}">`;
+  o+=`<text x="386" y="92" text-anchor="end" class="svgm" font-size="11">HANDLE</text><text x="386" y="106" text-anchor="end" class="svgm" font-size="11">up: ask to close</text><text x="386" y="120" text-anchor="end" class="svgm" font-size="11">down: open</text>`;
+  o+=`<rect x="395" y="78" width="30" height="64" rx="5" style="fill:var(--soft);stroke:${hOn?'var(--accent)':'var(--muted)'};stroke-width:${hOn?2.4:1}"/>`;
+  o+=`<rect x="398" y="${S.handle==='up'?82:118}" width="24" height="20" rx="3" style="fill:var(--ink)"/>`;
+  o+=`<line x1="410" y1="142" x2="410" y2="165" style="stroke:var(--ink);stroke-width:2;stroke-dasharray:4 3"/>`;
+  o+=`<circle cx="438" cy="128" r="5" style="fill:none;stroke:${S.lock?'var(--hot)':'var(--muted)'};stroke-width:2"/>`;
+  if(S.lock)o+=`<rect x="434" y="132" width="18" height="14" rx="2.5" style="fill:var(--hot)"/><path d="M437 132v-4a6 6 0 0 1 12 0v4" style="fill:none;stroke:var(--hot);stroke-width:2.2"/>`;
+  o+='</g>';
+  /* interlock + mechanical link */
+  const ilOpen=S.lock||S.handle==='down',iOn=hi.has('interlock');
+  o+=`<path d="M425 112H560V252H548" style="fill:none;stroke:var(--ink);stroke-width:1.2;stroke-dasharray:3 4;opacity:.6"/>`;
+  o+=`<rect x="488" y="242" width="60" height="20" rx="3" style="fill:var(--panel);stroke:${iOn?'var(--accent)':(ilOpen?'var(--fault)':'var(--muted)')};stroke-width:${iOn?2.4:1.2}"/>`;
+  o+=`<text x="518" y="256" text-anchor="middle" class="svgm" font-size="10.5">interlock</text>`;
+  if(ilOpen)o+=`<path d="M472 244l8 8M480 244l-8 8" style="stroke:var(--fault);stroke-width:2.2"/>`;
+  /* trip and close wires */
+  o+=sig('M440 270V215','var(--fault)','trip');
+  o+=sig('M518 270V262M518 242V222H466V215','var(--accent)','close');
+  /* chips */
+  o+=chip('metering',236,270,110,42,'Metering IC','V · I · f · phase');
+  o+=chip('safety',360,270,110,42,'Safety chip','trips only','var(--fault)');
+  o+=chip('main',484,270,180,42,'Main chip','rules · permit · caps');
+  o+=`<path d="M346 291H360M470 291H484" style="stroke:var(--muted);stroke-width:1.4"/>`;
+  o+=sig('M574 312V322M272 322H632M272 322V330M344 322V330M416 322V330M488 322V330M560 322V330M632 322V330','var(--accent)','bus');
+  const r2=[['secure','Secure chip'],['radio','Radio'],['plc','PLC modem'],['clock','Clock'],['supercap','Supercap'],['relays','Load relays']];
+  r2.forEach(([id,t],i)=>{o+=chip(id,240+i*72,330,64,38,t,'',id==='supercap'?'var(--hot)':null);});
+  /* home side */
+  o+=chip('panel',712,165,84,50,'Panel','main breaker');
+  o+=wire('M796 190H815',hkC,4,'home')+wire('M815 27V277',hkC,4,'home');
+  const loads=[['solar',27,'Solar 4 kW',hk==='dead'||hk==='fault'?'off: needs a live wire':hk==='grid'?'feeding home and grid':'on: the battery sets the beat',null],
+    ['battery',77,'Battery 13.5 kWh',{follow:'grid-following',form:'powering home',share:'sharing',off:'off'}[S.inv]+' · '+S.batt+'%',null],
+    ['ess',127,'Essentials','fridge, fan, medical',null],
+    ['ac',177,'Air conditioning',{on:'on',capped:'capped at 0.5 kW',off:'off'}[S.ac],S.ac],
+    ['ev',227,'EV charger',S.ev==='on'?'allowed':'blocked',S.ev],
+    ['wh',277,'Water heater',S.wh==='on'?'allowed':'blocked',S.wh]];
+  for(const [id,y,t,sub,rel] of loads){
+    const live=hk!=='dead'&&(rel==null||rel!=='off');
+    o+=wire(`M815 ${y}H840`,live?hkC:null,3);
+    o+=chip(id==='battery'||id==='solar'?id:'x-'+id,840,y-18,150,36,t,sub,id==='battery'?'var(--i2)':id==='solar'?'var(--hot)':null);
+    if(rel){const on=rel!=='off';o+=`<rect x="823" y="${y-5}" width="10" height="10" style="fill:${rel==='capped'?'var(--hot)':on?'var(--ink)':'var(--panel)'};stroke:var(--ink);stroke-width:1.2"/>`;}
+  }
+  o+=sig('M664 349H828V182','var(--accent)','relayline',true);
+  $('node').innerHTML=o;
+  const [pt,pc]=status();$('pill').className='pill '+pc;$('pilltext').textContent=pt;
+  readouts();}
+
+function vf(kind){return kind==='grid'?['240 V','60.00 Hz']:kind==='island'?['240 V','59.91 Hz']:kind==='own'?['240 V','59.94 Hz']:kind==='fault'?['96 V','unstable']:['0 V','no power'];}
+function readouts(){
+  const sv=S.street==='fault-dead'?['0 V','faulted']:vf(streetKind()),hv=vf(homeLive()==='dead'?null:homeLive());
+  const load=homeLive()==='dead'?0:0.2+({on:1.4,capped:0.5,off:0}[S.ac]);
+  let cur='0 A',cd='switch open';
+  if(S.closed){if(S.street==='grid'){cur=(load*1000/240).toFixed(1)+' A';cd='into home';}
+    else if(S.street==='island'){cur='2.1 A';cd='to street, sharing';}
+    else if(S.street==='fault-live'){cur=S.inv==='share'?'46 A':'small';cd=S.inv==='share'?'to street, fault':'voltage collapsed';}
+    else{cur='0 A';cd='no power';}}
+  const tiles=[['Street side',sv[0],sv[1]],['Home side',hv[0],hv[1]],['Through switch',cur,cd],['Home load',load.toFixed(1)+' kW',S.ac==='capped'?'capped':'uncapped'],
+    ['Battery',S.batt+'%',{follow:'following grid',form:'running home',share:'sharing',off:'off'}[S.inv]],
+    ['Handle',S.handle==='up'?'Up':'Down',S.lock?'padlocked':S.flock?'fault lockout':'no lock']];
+  $('readouts').innerHTML=tiles.map(([a,b,c])=>`<div class="ro"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');
+  const hl=homeLive();
+  const kp=[['Does the home have power?',hl==='dead'?'No':hl==='fault'?'Barely':'Yes',{grid:'from the grid',island:'shared with neighbors',own:'from its own battery',fault:'voltage collapsing',dead:'waiting for power'}[hl],hl==='dead'||hl==='fault'?'bad':'good'],
+    ['The switch',S.closed?'Closed':'Open',S.lock?'padlocked by a crew':S.flock?'locked out after a fault':'handle '+S.handle,S.lock||S.flock?'warn':''],
+    ['The street',{grid:'Live','island':'Live','dead':'Dead','fault-live':'Short circuit','fault-dead':'Dead'}[S.street],{grid:'grid power','island':'a neighbor\'s battery','dead':'no power','fault-live':'fault on the wires','fault-dead':'faulted, waiting for repair'}[S.street],S.street.startsWith('fault')?'bad':S.street==='dead'?'warn':'good']];
+  $('keyreads').innerHTML=kp.map(([a,b,c,k])=>`<div class="kr ${k}"><span>${a}</span><b>${b}</b><small>${c}</small></div>`).join('');}
+
+const islandRules=s=>{s.ac='capped';s.ev='off';s.wh='off';};
+const gridRules=s=>{s.ac='on';s.ev='on';s.wh='on';};
+const SEQ={
+gridFails:{steps:()=>[
+  {t:'0 ms',who:'Street',hi:['xfmr','street'],text:'A pole upstream goes down. Power to this street stops.',fx:s=>{s.street='dead';}},
+  {t:'8 ms',who:'Safety chip',hi:['safety','metering','sense'],text:'The safety chip sees street voltage collapse and trips the switch. It asks no one.'},
+  {t:'30 ms',who:'Contactor',hi:['contactor','window','supercap','trip'],text:'Supercapacitor energy fires the trip coil and the contacts open. The home can\'t feed a dead line now.',fx:s=>{s.closed=false;}},
+  {t:'40 ms',who:'Battery and main chip',hi:['battery','home','solar','main','relays','relayline'],text:'The home battery runs the house and keeps the solar working. EV charging and the water heater pause; AC is capped.',fx:s=>{s.inv='form';s.batt=81;islandRules(s);}}]},
+joinIsland:{steps:()=>[
+  {t:'0 s',who:'Transformer node',hi:['xfmr','neighbors','street'],text:'The transformer node test-pulses the street wires: no fault. Its island battery powers the street again.',fx:s=>{s.street='island';}},
+  {t:'0.3 s',who:'Secure and main chips',hi:['plc','plcline','secure','main','metering','sense'],text:'The transformer node invites one home at a time. A signed request says "join"; the node runs its own 8 checks and waits for the waves to line up.'},
+  {t:'0.6 s',who:'Contactor',hi:['contactor','close','window','safety','interlock'],text:'Both chips agree, so the close coil fires at 4° apart. This battery now helps neighbors who have none.',fx:s=>{s.closed=true;s.inv='share';s.batt=78;}}]},
+streetFault:{steps:()=>[
+  {t:'0 ms',who:'Street',hi:['neighbors','street'],text:'A branch falls across the street wires and shorts them.',fx:s=>{s.street='fault-live';}},
+  {t:'30 ms',who:'Safety chip',hi:['safety','sense','contactor','window','trip'],text:'Batteries can\'t push enough current to blow a fuse, so nodes compare current in and out instead. Too much leaving: a fault. Trip.',fx:s=>{s.closed=false;s.street='fault-dead';s.inv='form';islandRules(s);}},
+  {t:'50 ms',who:'Main chip',hi:['main'],text:'Fault lockout. Nothing can close onto the street until a crew fixes it and a test pulse comes back clean.',fx:s=>{s.flock=true;}}]},
+crewLock:{steps:()=>[
+  {t:'0 s',who:'Line crew',hi:['handle','window','interlock'],text:'A lineworker pulls the handle down, sees the gap in the window, and padlocks it. The close wire is now cut.',fx:s=>{s.handle='down';s.lock=true;}},
+  {t:'1 s',who:'Main chip',hi:['radio','bus','secure','main'],text:'A genuine close request arrives by mistake. Refused: padlock on.'},
+  {t:'1 s',who:'Interlock',hi:['interlock','close'],text:'Even if buggy software fired the close coil, no current could reach it.'}]},
+forged:{steps:()=>[
+  {t:'0 s',who:'Secure chip',hi:['radio','bus','secure'],text:'A hacker sends OPEN with a fake signature. Dropped and logged.'},
+  {t:'5 s',who:'Main chip',hi:['main','radio','secure'],text:'They retry with a stolen real key. Still refused: home nodes have no OPEN command at all.'}]},
+backOn:{steps:()=>[
+  {t:'0 s',who:'Line crew',hi:['neighbors','street','xfmr','handle'],text:'The crew fixes the line, resets the lockout and takes the padlock back. The homeowner pushes the handle up.',fx:s=>{s.street='dead';s.flock=false;s.lock=false;s.handle='up';}},
+  {t:'5 min',who:'Metering IC',hi:['xfmr','street','metering','sense'],text:'Utility power returns. The node waits 5 minutes of steady power so a flickering grid can\'t drag homes along.',fx:s=>{s.street='grid';}},
+  {t:'5 min',who:'Contactor',hi:['contactor','close','window','safety','battery'],text:'The waves line up and the contacts close at 5°. The battery recharges and the caps lift.',fx:s=>{s.closed=true;s.inv='follow';s.batt=79;gridRules(s);}}]}};
+
+const STORY=[['gridFails','The grid fails'],['joinIsland','Neighbors share'],['streetFault','Short on the street'],['crewLock','Crew padlocks it'],['forged','A hacker attacks'],['backOn','Back on the grid']];
+const clone=o=>JSON.parse(JSON.stringify(o));
+const FLAT=[];
+(function(){let cur=START();STORY.forEach(([k],ci)=>{S=clone(cur);const steps=SEQ[k].steps();steps.forEach((st,si)=>{if(st.fx)st.fx(cur);FLAT.push({ci,si,n:steps.length,st,state:clone(cur)});});});S=START();})();
+let pos=-1,ptimer=null,auto=false;
+const INTRO={t:'Before',who:'A normal day',text:'The switch is closed and the grid powers the home. The node just watches and sends a signed status report every second. Press Play to see what it does when things go wrong.'};
+function show(){
+  if(pos<0){S=START();hi=new Set();}else{S=clone(FLAT[pos].state);hi=new Set(FLAT[pos].st.hi||[]);}
+  draw();
+  const st=pos<0?INTRO:FLAT[pos].st,ci=pos<0?-1:FLAT[pos].ci;
+  $('captime').textContent=st.t;$('capwho').textContent=st.who;$('captext').textContent=st.text;
+  $('chapters').innerHTML=STORY.map(([k,t],i)=>`<button type="button" data-c="${i}" class="${i===ci?'on':i<ci?'done':''}" aria-pressed="${i===ci}"><span>${i+1}</span>${t}</button>`).join('');
+  $('r-count').textContent=pos<0?`${STORY.length} chapters, ${FLAT.length} steps`:`Chapter ${ci+1} of ${STORY.length} · step ${FLAT[pos].si+1} of ${FLAT[pos].n}`;
+  $('r-back').disabled=pos<0;$('r-next').disabled=pos>=FLAT.length-1;}
+function go(p){pos=Math.max(-1,Math.min(FLAT.length-1,p));show();}
+function setAuto(a){auto=a;$('r-play').textContent=a?'Pause':'Play';clearInterval(ptimer);
+  if(a){if(pos>=FLAT.length-1)pos=-1;go(pos+1);ptimer=setInterval(()=>{if(pos>=FLAT.length-1){setAuto(false);return;}go(pos+1);},3000);}}
+$('r-next').onclick=()=>{setAuto(false);go(pos+1);};
+$('r-back').onclick=()=>{setAuto(false);go(pos-1);};
+$('r-play').onclick=()=>setAuto(!auto);
+$('r-reset').onclick=()=>{setAuto(false);go(-1);};
+$('chapters').addEventListener('click',e=>{const b=e.target.closest('[data-c]');if(!b)return;setAuto(false);go(FLAT.findIndex(f=>f.ci===+b.dataset.c));});
+document.querySelector('.story').addEventListener('keydown',e=>{if(e.key==='ArrowRight'){e.preventDefault();$('r-next').click();}else if(e.key==='ArrowLeft'){e.preventDefault();$('r-back').click();}});
+show();
+
+// Keep the authored outage states, schematic, highlights, and chapter sequence.
+let portfolioTimer=null;
+window.MilesProject={
+  kind:'electric-island',
+  play(){
+    if(portfolioTimer)return;
+    setAuto(false);
+    portfolioTimer=setInterval(()=>go(pos>=FLAT.length-1?0:pos+1),1500);
+  },
+  pause(){clearInterval(portfolioTimer);portfolioTimer=null;setAuto(false);},
+  ready(){return !!document.getElementById('node').childElementCount;}
+};
+
+window.__island={get S(){return S},SEQ,FLAT,go};
+})();
+
+(function(){
+const $=id=>document.getElementById(id);
+const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let df=0.12,dv=3,phi=150,closed=false,waiting=false,last=null,nudged=false;
+const ang=()=>{const a=((phi%360)+360)%360;return a>180?360-a:a;};
+function wave(amp,shift){let d='';for(let i=0;i<=120;i++){const x=20+i*440/120,th=(i/120)*4*Math.PI-shift*Math.PI/180;d+=(i?'L':'M')+x.toFixed(1)+' '+(110-amp*Math.sin(th)).toFixed(1);}return d;}
+function draw(){
+  let o=`<line x1="20" y1="110" x2="460" y2="110" style="stroke:var(--rule);stroke-width:1"/>`;
+  o+=`<line x1="20" y1="22" x2="40" y2="22" style="stroke:${closed?'var(--i1)':'var(--hot)'};stroke-width:3"/><text x="46" y="26" class="svgm" font-size="11">${closed?'one wire, one wave':'street side'}</text>`;
+  if(!closed)o+=`<line x1="150" y1="22" x2="170" y2="22" style="stroke:var(--i2);stroke-width:3"/><text x="176" y="26" class="svgm" font-size="11">home side</text>`;
+  if(closed)o+=`<path d="${wave(70,0)}" style="fill:none;stroke:var(--i1);stroke-width:3"/>`;
+  else o+=`<path d="${wave(70,0)}" style="fill:none;stroke:var(--hot);stroke-width:2.5"/><path d="${wave(70*(1-dv/100),phi)}" style="fill:none;stroke:var(--i2);stroke-width:2.5"/>`;
+  const cx=555,cy=104,r=62,a=closed?0:ang()*(((phi%360)+360)%360>180?-1:1);
+  const arc=(deg)=>[cx+r*Math.sin(deg*Math.PI/180),cy-r*Math.cos(deg*Math.PI/180)];
+  const [x1,y1]=arc(-20),[x2,y2]=arc(20);
+  o+=`<circle cx="${cx}" cy="${cy}" r="${r}" style="fill:var(--soft);stroke:var(--rule)"/>`;
+  o+=`<path d="M${cx} ${cy}L${x1.toFixed(1)} ${y1.toFixed(1)}A${r} ${r} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}Z" style="fill:color-mix(in srgb,var(--ok) 28%,transparent)"/>`;
+  const [nx,ny]=arc(a);
+  o+=`<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" style="stroke:var(--ink);stroke-width:3;stroke-linecap:round"/><circle cx="${cx}" cy="${cy}" r="4" style="fill:var(--ink)"/>`;
+  o+=`<text x="${cx}" y="${cy-r-8}" text-anchor="middle" class="svgm" font-size="10.5">in step</text>`;
+  o+=`<text x="${cx}" y="200" text-anchor="middle" class="svgd" font-size="17">${closed?'0°':ang().toFixed(0)+'°'} apart</text>`;
+  $('waves').innerHTML=o;}
+function verdict(cls,txt){const v=$('s-verdict');v.className='verdict '+cls;v.textContent=txt;}
+function ask(){
+  if(closed)return;
+  if(df>0.3){waiting=false;verdict('no',`Refused. The two sides are ${df.toFixed(2)} Hz apart, over the 0.3 Hz limit. The waves slide past each other too fast to catch safely, so the node waits for the island's lead battery to adjust.`);return;}
+  if(dv>10){waiting=false;verdict('no',`Refused. The voltages differ by ${dv}%, over the 10% limit. Closing now would slam current from the higher side into the lower one.`);return;}
+  waiting=true;nudged=df<0.02;
+  verdict('wait',nudged?'Waiting. The waves are not drifting at all, so the node asks the lead battery to speed up by 0.05 Hz to bring them together.':'Waiting for the waves to line up within 20°.');}
+function frame(ts){
+  if(window.MILES_EMBED.preview||window.MILES_EMBED.active===false||document.hidden){last=ts;requestAnimationFrame(frame);return;}
+  if(last==null)last=ts;const dt=Math.min(0.05,(ts-last)/1000);last=ts;
+  const slip=nudged&&waiting?0.05:df;
+  if(!closed&&(!reduce||waiting))phi=(phi+360*slip*dt)%360;
+  if(waiting&&!closed){
+    if(df>0.3||dv>10){ask();}
+    else if(ang()<=6){closed=true;waiting=false;verdict('go',`Closed at ${ang().toFixed(0)}° apart, inside the 20° limit. Both sides are now one wire carrying one wave.`);}
+    else if(!nudged)verdict('wait',`Waiting for the waves to line up: ${ang().toFixed(0)}° apart.`);}
+  draw();requestAnimationFrame(frame);}
+const upd=()=>{df=+$('s-df').value;dv=+$('s-dv').value;$('o-df').textContent=df.toFixed(2)+' Hz';$('o-dv').textContent=dv+' %';if(!closed&&!reduce)draw();};
+$('s-df').addEventListener('input',upd);$('s-dv').addEventListener('input',upd);
+$('s-close').onclick=ask;
+$('s-reset').onclick=()=>{closed=false;waiting=false;nudged=false;phi=150;verdict('','Open. Waiting for a close request.');draw();};
+upd();draw();requestAnimationFrame(frame);
+})();
+
+
+</script>
+<script>/* Bridge between a project document and its portfolio frame. No project data is sent. */
+(() => {
+  const config = window.MILES_EMBED;
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let active = !config.preview;
+  let paused = motion.matches;
+  const parentIsPortfolio = window.parent !== window;
+  const send = (type, detail = {}) => {
+    if (parentIsPortfolio) window.parent.postMessage({type, kind: config.kind, ...detail}, '*');
+  };
+  const apply = () => {
+    config.active = active && !document.hidden;
+    const api = window.MilesProject;
+    document.documentElement.classList.toggle('portfolio-paused',!config.active||(config.preview&&paused));
+    if (!config.preview) { if (!config.active) api?.pause?.(); return; }
+    if (config.active && !paused) api?.play?.();
+    else api?.pause?.();
+  };
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent || event.data?.type !== 'miles:visibility') return;
+    active = Boolean(event.data.active);
+    paused = Boolean(event.data.paused);
+    apply();
+  });
+  document.addEventListener('visibilitychange', apply);
+  motion.addEventListener('change', event => { if (!parentIsPortfolio) paused = event.matches; apply(); });
+  window.addEventListener('pagehide', () => window.MilesProject?.pause?.());
+  document.addEventListener('click', event => {
+    const a = event.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    if (parentIsPortfolio && /^\/(projects|apps)\//.test(href)) {
+      event.preventDefault();
+      send('miles:navigate', {path: href});
+    } else if (/^https?:/.test(href)) {
+      a.target = '_blank'; a.rel = 'noopener noreferrer';
+    }
+  });
+  // Preview duplicates should never make screen readers announce changing values.
+  if (config.preview) document.querySelectorAll('[aria-live]').forEach(el => el.setAttribute('aria-live', 'off'));
+  if (!parentIsPortfolio) {
+    const back = document.createElement('a');
+    back.href = '/projects/' + (config.kind === 'electric-model' ? 'electric-island' : config.kind) + '/';
+    back.className = 'portfolio-return'; back.textContent = '← Miles Silverman · Project';
+    document.body.append(back);
+  }
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => window.MilesProject?.resize?.(), 80);
+  });
+  apply();
+  if (window.MILES_APP_ERROR) send('miles:error', {message: window.MILES_APP_ERROR});
+  else if (!window.MilesProject || window.MilesProject.ready?.() === false) {
+    send('miles:error', {message:'This view could not start. Try another view or reload the workspace.'});
+  } else send('miles:ready');
+})();
+</script>
+</body>
+</html>

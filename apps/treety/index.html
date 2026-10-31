@@ -1,0 +1,1332 @@
+<!doctype html><html><head><script>
+(function(){
+  var query=new URLSearchParams(location.search);
+  var fromName=(window.name||'').split(':');
+  var config=window.MILES_EMBED||{};
+  config.kind='treety';
+  config.mode=config.mode||(fromName[0]==='miles'&&fromName[2])||query.get('embed')||'app';
+  config.preview=config.mode==='preview';
+  config.active=!config.preview;
+  window.MILES_EMBED=config;
+  document.documentElement.classList.add('portfolio-'+config.mode,'portfolio-'+config.kind);
+  document.documentElement.setAttribute('data-theme','light');
+})();
+</script>
+<style>/* All rules apply only inside the authored project iframe. */
+html.portfolio-preview,html.portfolio-preview body{height:100%;width:100%;overflow:hidden!important;margin:0!important;padding:0!important;scroll-behavior:auto}
+html.portfolio-preview body{pointer-events:none;user-select:none}
+html.portfolio-preview.portfolio-paused *,html.portfolio-preview.portfolio-paused *:before,html.portfolio-preview.portfolio-paused *:after{animation-play-state:paused!important;transition:none!important}
+html.portfolio-preview *,html.portfolio-preview *:before,html.portfolio-preview *:after{cursor:default!important}
+
+/* The original StreetForge canvas and its original scene renderer. */
+html.portfolio-preview.portfolio-streetforge{--topbar:0px;--projectbar:0px}
+html.portfolio-preview.portfolio-streetforge body>:not(#canvas):not(#portfolio-sf-tour):not(script):not(style):not(link){display:none!important}
+html.portfolio-preview.portfolio-streetforge #canvas{position:fixed!important;inset:62px 0 32px!important;width:100%!important;height:calc(100% - 94px)!important;outline:0}
+#portfolio-sf-tour{position:fixed;inset:0;z-index:2100;pointer-events:none;font-family:Inter,system-ui,sans-serif;color:#e7edff;text-align:left}
+#portfolio-sf-tour [hidden]{display:none!important}
+.sf-tour-header{position:absolute;top:0;left:0;right:0;height:36px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 11px;background:#1d2230;border-bottom:1px solid #384053}
+.sf-tour-header strong{font-size:12px;letter-spacing:-.35px;white-space:nowrap}.sf-tour-header strong>span{font-size:9px;font-weight:400;color:#9ba9c3;margin-left:4px}
+.sf-tour-header>div{display:flex;align-items:center;gap:6px}.sf-tour-header button{background:#2b3448;border:1px solid #4a5b78;border-radius:4px;padding:4px 8px;color:#e5eeff;font-size:9px;line-height:1.3}
+.sf-tour-badge{font-size:7px;letter-spacing:.1em;color:#92a9ce;margin-left:3px}
+.sf-tour-project{position:absolute;top:36px;left:0;right:0;height:26px;display:flex;gap:8px;align-items:center;padding:0 12px;background:#191e29;border-bottom:1px solid #30384b}
+.sf-tour-project>span{font-size:7px;letter-spacing:.12em;color:#8694af}.sf-tour-project>button{padding:0;border:0;background:none;color:#d4e1f8;font-size:10px;line-height:1.4}
+.sf-tour-dialog{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);display:flex;flex-direction:column;gap:7px;width:min(344px,calc(100% - 32px));padding:12px;border:1px solid #547fb9;background:#222a3a;border-radius:9px;box-shadow:0 9px 32px #0007}
+.sf-tour-dialog>strong{font-size:12px;font-weight:600;line-height:1.4;color:#f0f4ff}
+#portfolio-sf-tour #descText{display:block;width:100%;height:48px!important;min-height:0!important;max-height:48px;resize:none;overflow:hidden;box-sizing:border-box;font:10px/15px Inter,system-ui,sans-serif;background:#131a27;color:#e5efff;padding:6px 8px;margin:0;border:1px solid #607ca9;border-radius:5px;caret-color:#99c6ff}
+#portfolio-sf-tour #descCanvas{display:block;width:100%;height:52px!important;min-height:0;margin:0;border:0;border-radius:4px}
+.sf-tour-place{display:flex;justify-content:flex-end}
+#portfolio-sf-tour #descPlace,.sf-tour-name>button{border:1px solid #99beff;background:#92baff;color:#111d31;font:600 10px/1.3 Inter,system-ui,sans-serif;border-radius:5px;padding:6px 11px;min-height:27px;margin:0;float:none}
+.sf-tour-add{position:absolute;left:12px;top:74px;width:180px;padding:10px;border:1px solid #536788;border-radius:8px;background:#222a3a;box-shadow:0 9px 25px #0005;display:flex;flex-direction:column;gap:7px}
+.sf-tour-add>span{font-size:8px;letter-spacing:.1em;color:#acbdd7;margin-bottom:2px}.sf-tour-add>button{display:flex;align-items:center;gap:9px;border:1px solid #445572;border-radius:5px;padding:8px;background:#2b3549;color:#e4edff;font:11px/1.4 Inter,system-ui,sans-serif;text-align:left}.sf-tour-add>button>span{font-size:17px;color:#a8d8b0}.sf-tour-add>button.chosen{border-color:#8ec1ff;background:#334c6b}
+.sf-tour-name input{display:block;width:100%;padding:8px;background:#131a27;border:1px solid #789bc9;border-radius:5px;color:#e5efff;font:12px/1.4 Inter,system-ui,sans-serif}
+.sf-tour-name>button{align-self:flex-end}
+.sf-tour-footer{position:absolute;bottom:0;left:0;right:0;height:32px;display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 11px;border-top:1px solid #3b465b;background:#1c2330;color:#d3e5ff;font-size:9px;line-height:1.4}
+.sf-tour-dots{display:flex;gap:4px;flex-shrink:0}.sf-tour-dots i{height:3px;width:11px;background:#45516a;border-radius:3px}.sf-tour-dots i.active{background:#91bbff}
+.sf-tour-pointer{position:absolute;top:0;left:0;width:22px;height:27px;z-index:2200;will-change:transform;filter:drop-shadow(0 2px 2px #0005);transition:opacity .25s}.sf-tour-pointer svg{height:27px;width:22px;display:block;overflow:visible}.sf-tour-click{position:absolute;top:-10px;left:-10px;width:24px;height:24px;border:2px solid #b9d4ff;border-radius:50%;opacity:0}.sf-tour-pointer.is-clicking .sf-tour-click{animation:sf-tour-click .44s ease-out}
+@keyframes sf-tour-click{0%{opacity:1;transform:scale(.25)}100%{opacity:0;transform:scale(1.5)}}
+@media(max-width:330px){.sf-tour-header{padding-inline:8px}.sf-tour-header button{padding:4px 6px;font-size:8px}.sf-tour-dialog{padding:10px;gap:6px}.sf-tour-badge{font-size:6px}.sf-tour-footer{font-size:8px;padding-inline:8px}.sf-tour-dots i{width:8px}}
+
+/* Show the authored Treety long section in preview and diagram modes. */
+html.portfolio-preview.portfolio-treety body>header,html.portfolio-preview.portfolio-treety body>footer,
+html.portfolio-diagram.portfolio-treety body>header,html.portfolio-diagram.portfolio-treety body>footer{display:none!important}
+html.portfolio-preview.portfolio-treety main>section:not(#section),html.portfolio-diagram.portfolio-treety main>section:not(#section){display:none!important}
+html.portfolio-preview.portfolio-treety #section>.wrap,html.portfolio-diagram.portfolio-treety #section>.wrap{padding:0!important;max-width:none;margin:0}
+html.portfolio-preview.portfolio-treety #section,html.portfolio-diagram.portfolio-treety #section{border:0}
+html.portfolio-preview.portfolio-treety #section>.wrap>.sec-head,html.portfolio-preview.portfolio-treety #section>.wrap>h2,
+html.portfolio-diagram.portfolio-treety #section>.wrap>.sec-head,html.portfolio-diagram.portfolio-treety #section>.wrap>h2,
+html.portfolio-preview.portfolio-treety .sim-under,html.portfolio-diagram.portfolio-treety .sim-under,
+html.portfolio-preview.portfolio-treety #section>.wrap>details{display:none!important}
+html.portfolio-preview.portfolio-treety main,html.portfolio-preview.portfolio-treety #section,html.portfolio-preview.portfolio-treety #section>.wrap,
+html.portfolio-preview.portfolio-treety .sim,html.portfolio-preview.portfolio-treety .xs-grid,html.portfolio-preview.portfolio-treety .xs-fig{height:100%;width:100%}
+html.portfolio-preview.portfolio-treety .sim{border:0;margin:0;background:#e2e6dd;display:grid;place-items:center}
+html.portfolio-preview.portfolio-treety .sim>:not(.xs-grid),html.portfolio-preview.portfolio-treety .xs-panel{display:none!important}
+html.portfolio-preview.portfolio-treety .xs-grid{display:block!important;border:0}
+html.portfolio-preview.portfolio-treety .xs-fig{display:grid;place-items:center;overflow:hidden!important;border:0}
+html.portfolio-preview.portfolio-treety #xsec{width:100%!important;height:100%!important;min-width:0!important;max-height:100%;display:block}
+html.portfolio-diagram.portfolio-treety #section>.wrap{padding:18px!important}
+html.portfolio-diagram.portfolio-treety .sim{margin:0}
+@media(max-width:650px){html.portfolio-diagram.portfolio-treety #section>.wrap{padding:8px!important}}
+
+/* Electric Island uses its actual outage state machine and SVG schematic. */
+html.portfolio-preview.portfolio-electric-island body>.wrap{height:100%;width:100%;max-width:none;padding:0;display:block}
+html.portfolio-preview.portfolio-electric-island .wrap>:not(#run){display:none!important}
+html.portfolio-preview.portfolio-electric-island #run{display:block;height:100%}
+html.portfolio-preview.portfolio-electric-island #run>.sechead{display:none!important}
+html.portfolio-preview.portfolio-electric-island .story{height:100%;border:0;border-radius:0;padding:7px;background:#e2e8e6;display:grid;place-items:center}
+html.portfolio-preview.portfolio-electric-island .story>:not(.schem){display:none!important}
+html.portfolio-preview.portfolio-electric-island .schem{width:100%;height:100%;overflow:hidden!important;display:grid;place-items:center}
+html.portfolio-preview.portfolio-electric-island #node{min-width:0!important;width:100%!important;height:100%!important;display:block}
+html.portfolio-app.portfolio-electric-island .topbar,html.portfolio-app.portfolio-electric-model .nav{display:none}
+html.portfolio-diagram.portfolio-electric-island .wrap{max-width:none;padding:20px;gap:0}
+html.portfolio-diagram.portfolio-electric-island .wrap>:not(#run){display:none!important}
+html.portfolio-diagram.portfolio-electric-island #run>.sechead{display:none}
+html.portfolio-preview.portfolio-electric-model .app{grid-template-columns:1fr;grid-template-rows:1fr;height:100%}
+html.portfolio-preview.portfolio-electric-model .app>.top,html.portfolio-preview.portfolio-electric-model .panel,
+html.portfolio-preview.portfolio-electric-model .views,html.portfolio-preview.portfolio-electric-model .titleblock{display:none!important}
+html.portfolio-preview.portfolio-electric-model .stage{grid-column:1;grid-row:1;height:100%}
+
+/* A direct workspace URL still offers a route back to Miles' portfolio. */
+.portfolio-return{display:block;position:fixed;right:14px;bottom:14px;z-index:9999;font:12px/1.4 system-ui,sans-serif;background:#233a34;color:#f5f4ee;padding:10px 15px;text-decoration:none;border-radius:24px;box-shadow:0 2px 12px #0002}
+.portfolio-return:focus-visible{outline:3px solid #b4432c;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){html.portfolio-preview *{animation:none!important;transition:none!important}}
+</style>
+<meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Treety</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+
+
+
+<style>
+/* Layout: engineering explainer. Numbered sections down one column, a to-scale parkway section as the centerpiece, mono labels throughout. */
+:root{
+  --bg:#EDEFE9;
+  --surface:#E2E6DD;
+  --ink:#1B1E19;
+  --muted:#5A6056;
+  --rule:#C5CABF;
+  --water:#1D5FC0;
+  --water-soft:rgba(29,95,192,.22);
+  --wick:#A0691A;
+  --leaf:#3F6A2B;
+  --leaf-soft:rgba(63,106,43,.16);
+  --soil:#D9CDB5;
+  --soil-line:#B7A889;
+  --stone:#B3B6AD;
+  --hatch:rgba(27,30,25,.07);
+  --f-display:"Archivo","Arial Narrow",Arial,sans-serif;
+  --f-body:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121510;--surface:#1B1F19;--ink:#E4E8DF;--muted:#9AA194;--rule:#2F342C;
+    --water:#5C9CF2;--water-soft:rgba(92,156,242,.28);--wick:#D7A14B;--leaf:#86B868;--leaf-soft:rgba(134,184,104,.18);
+    --soil:#3A3327;--soil-line:#5A4F3C;--stone:#4D5149;--hatch:rgba(228,232,223,.06);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121510;--surface:#1B1F19;--ink:#E4E8DF;--muted:#9AA194;--rule:#2F342C;
+  --water:#5C9CF2;--water-soft:rgba(92,156,242,.28);--wick:#D7A14B;--leaf:#86B868;--leaf-soft:rgba(134,184,104,.18);
+  --soil:#3A3327;--soil-line:#5A4F3C;--stone:#4D5149;--hatch:rgba(228,232,223,.06);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased}
+a{color:inherit}
+a:focus-visible,button:focus-visible,input:focus-visible{outline:2px solid var(--water);outline-offset:2px}
+.wrap{max-width:1120px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.mono{font-family:var(--f-mono)}
+p{margin:0}
+.measure{max-width:64ch}
+
+/* header */
+.top{border-bottom:1px solid var(--rule)}
+.top-in{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:14px}
+.brand{display:flex;align-items:baseline;gap:10px;text-decoration:none}
+.brand-code{font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;border:1px solid var(--ink);padding:1px 6px}
+.brand-name{font-family:var(--f-display);font-stretch:112%;font-weight:800;font-size:20px;letter-spacing:.01em}
+.top nav{display:flex;gap:18px;flex-wrap:wrap}
+.top nav a{font-family:var(--f-mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;text-decoration:none;color:var(--muted)}
+.top nav a:hover{color:var(--ink)}
+
+/* type */
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted)}
+.sec-head{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:14px}
+.num{font-family:var(--f-mono);font-size:12px;color:var(--water);font-weight:500}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0}
+h1{font-stretch:112%;font-weight:800;font-size:clamp(2.1rem,5.2vw,4.3rem);line-height:1.02;letter-spacing:-.012em}
+h1 span{display:block}
+h1 .h1-b{color:var(--water)}
+h2{font-stretch:106%;font-weight:760;font-size:clamp(1.55rem,3.2vw,2.5rem);line-height:1.08;letter-spacing:-.005em;max-width:24ch;margin-bottom:18px}
+h3{font-stretch:104%;font-weight:700;font-size:1.2rem;line-height:1.2}
+
+/* sections */
+.sec{border-top:1px solid var(--rule)}
+.sec>.wrap{padding-block:clamp(48px,7vw,92px)}
+
+/* hero */
+.hero>.wrap{padding-block:clamp(36px,6vw,80px)}
+.hero-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:clamp(28px,5vw,64px);align-items:start}
+.hero-main{display:flex;flex-direction:column;gap:22px;min-width:0}
+.lede{font-size:1.1rem;max-width:56ch}
+.soon{display:inline-flex;align-items:center;gap:10px;align-self:flex-start;font-family:var(--f-mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;border:1px dashed var(--muted);padding:6px 10px}
+.soon i{width:8px;height:8px;border-radius:50%;background:var(--wick);display:inline-block}
+.spec{margin:0;display:grid;grid-template-columns:auto minmax(0,1fr);border-top:1px solid var(--ink);min-width:0}
+.spec dt,.spec dd{margin:0;padding:9px 0;border-bottom:1px solid var(--rule)}
+.spec dt{font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);padding-right:18px;padding-top:11px}
+.spec dd{font-size:.95rem}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:clamp(36px,5vw,64px);border-top:1px solid var(--ink)}
+.stat{padding:18px 18px 4px 0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.stat+.stat{padding-left:18px;border-left:1px solid var(--rule)}
+.stat-n{font-family:var(--f-display);font-stretch:110%;font-weight:800;font-size:clamp(1.9rem,3.6vw,2.7rem);line-height:1;font-variant-numeric:tabular-nums}
+.stat-n sup a{font-family:var(--f-mono);font-size:11px;font-weight:500;color:var(--water);text-decoration:none;margin-left:3px;vertical-align:super}
+.stat p{font-size:.92rem;color:var(--muted)}
+
+/* problem */
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(20px,4vw,48px);margin-top:8px}
+.two>div{display:flex;flex-direction:column;gap:10px;min-width:0}
+.tag{font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.09em}
+.tag.thirst{color:var(--wick)}
+.tag.heave{color:var(--water)}
+.punch{margin-top:28px;font-family:var(--f-display);font-stretch:104%;font-weight:650;font-size:1.25rem;max-width:44ch}
+.tbl-scroll{overflow-x:auto;margin-top:28px;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:560px;font-size:.95rem}
+th,td{text-align:left;padding:11px 14px 11px 0;border-bottom:1px solid var(--rule);vertical-align:top}
+thead th{font-family:var(--f-mono);font-size:11.5px;font-weight:500;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);border-bottom:1px solid var(--ink)}
+tbody th{font-family:var(--f-mono);font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap}
+td.us{color:var(--ink);font-weight:600}
+td.them{color:var(--muted)}
+
+/* section / sim */
+.sim{border:1px solid var(--rule);background:var(--surface);margin-top:8px}
+.sim-bar{display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;padding:14px 16px;border-bottom:1px solid var(--rule)}
+.btn{font-family:var(--f-mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;background:var(--ink);color:var(--bg);border:0;padding:8px 14px;cursor:pointer;min-width:84px}
+.btn:hover{background:var(--water)}
+.scrub{display:flex;align-items:center;gap:10px;flex:1 1 220px;min-width:0}
+.scrub input{flex:1;min-width:0;accent-color:var(--water)}
+.scrub output{font-family:var(--f-mono);font-size:13px;min-width:5.5ch;font-variant-numeric:tabular-nums}
+.seg{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seg-l{font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.seg-b{display:inline-flex;border:1px solid var(--ink)}
+.seg-b button{font-family:var(--f-mono);font-size:12px;background:transparent;color:var(--ink);border:0;padding:5px 10px;cursor:pointer}
+.seg-b button+button{border-left:1px solid var(--ink)}
+.seg-b button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.fig-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.fig-scroll svg{display:block;width:100%;min-width:620px;height:auto}
+.fig-cap{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:8px 16px;border-top:1px solid var(--rule);font-family:var(--f-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.readouts{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));border-top:1px solid var(--rule)}
+.ro{padding:12px 16px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.ro+.ro{border-left:1px solid var(--rule)}
+.ro span{font-family:var(--f-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.ro b{font-family:var(--f-display);font-stretch:108%;font-weight:750;font-size:1.35rem;font-variant-numeric:tabular-nums;line-height:1.15}
+.ro b small{font-family:var(--f-mono);font-size:11px;font-weight:400;color:var(--muted);margin-left:3px}
+.sim-under{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:clamp(20px,4vw,48px);margin-top:28px}
+.howto{border-left:2px solid var(--water);padding-left:16px;display:flex;flex-direction:column;gap:8px}
+.howto h3{font-size:1rem;font-family:var(--f-mono);font-weight:500;text-transform:uppercase;letter-spacing:.08em}
+.howto p,.sim-under p{font-size:.95rem}
+
+/* svg styling */
+.x-soil{fill:var(--soil);stroke:var(--soil-line);stroke-width:.6}
+.x-sweet{fill:var(--leaf-soft);stroke:var(--leaf);stroke-width:1;stroke-dasharray:4 3}
+.x-boxfill{fill:var(--bg)}
+.x-boxwall{fill:none;stroke:var(--ink);stroke-width:2}
+.x-grid{stroke:var(--muted);stroke-width:.6;opacity:.45}
+.x-water{fill:var(--water-soft)}
+.x-wline{stroke:var(--water);stroke-width:1.6}
+.x-ofline{stroke:var(--water);stroke-width:1;stroke-dasharray:5 4}
+.x-gravel{fill:var(--stone)}
+.x-pipe{fill:none;stroke:var(--water);stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+.x-thin{fill:none;stroke:var(--ink);stroke-width:1}
+.x-part{fill:var(--stone);stroke:var(--ink);stroke-width:.8}
+.x-wick{fill:none;stroke:var(--wick);stroke-width:5;stroke-linejoin:round}
+.x-wickend{fill:var(--wick)}
+.x-canopy{fill:var(--leaf);opacity:.85}
+.x-trunk{fill:var(--leaf)}
+.x-ball{fill:var(--leaf-soft);stroke:var(--leaf);stroke-width:1}
+.x-root{fill:none;stroke:var(--leaf);stroke-width:2;stroke-linecap:round}
+.x-grade{stroke:var(--ink);stroke-width:1.5}
+.x-t{fill:var(--ink);font-family:var(--f-mono);font-size:11.5px}
+.x-tm{fill:var(--muted);font-family:var(--f-mono);font-size:10.5px}
+.x-tw{fill:var(--water);font-family:var(--f-mono);font-size:11.5px;font-weight:500}
+.x-lead{stroke:var(--muted);stroke-width:.6}
+.x-dot{fill:var(--ink)}
+.x-flow{opacity:.25;transition:opacity .25s}
+.x-head{fill:none;stroke:var(--water);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.x-vent{stroke:var(--water);stroke-width:2;fill:none}
+.fn{font-family:var(--f-mono);color:var(--water);text-decoration:none;font-size:12px;vertical-align:super;margin-left:2px}
+.x-flow.on{opacity:1}
+.x-pit{fill:var(--stone);stroke:var(--ink);stroke-width:.8}
+.c-area{fill:var(--water-soft)}
+.c-line{fill:none;stroke:var(--water);stroke-width:2}
+.c-rain{fill:var(--muted);opacity:.55}
+.c-axis{stroke:var(--rule);stroke-width:1}
+.c-cap{stroke:var(--water);stroke-width:1;stroke-dasharray:5 4}
+.c-res{stroke:var(--wick);stroke-width:1;stroke-dasharray:2 3}
+.c-cursor{stroke:var(--ink);stroke-width:1}
+.c-dot{fill:var(--water);stroke:var(--bg);stroke-width:2}
+.c-refill{fill:var(--wick)}
+.c-hit{fill:transparent;cursor:ew-resize}
+@media (prefers-reduced-motion:no-preference){
+  .x-flow.on .x-pipe{stroke-dasharray:6 5;animation:flow .6s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-11}}
+}
+
+
+/* diagram parts + panel */
+.xs-grid{display:grid;grid-template-columns:minmax(0,1fr) 340px}
+.xs-fig svg{min-width:600px}
+.xs-panel{border-left:1px solid var(--rule);padding:14px 16px 18px;display:flex;flex-direction:column;gap:16px;min-width:0}
+.chips{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px}
+.chip{display:flex;gap:7px;align-items:center;text-align:left;font-family:var(--f-body);font-size:.8rem;line-height:1.2;background:transparent;border:1px solid var(--rule);color:var(--ink);padding:4px 7px;cursor:pointer;min-width:0}
+.chip span{min-width:0}
+.chip i{font-style:normal;font-family:var(--f-mono);font-size:10px;width:18px;height:18px;border-radius:50%;background:var(--ink);color:var(--bg);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.chip:hover{border-color:var(--muted)}
+.chip[aria-pressed="true"]{border-color:var(--water)}
+.chip[aria-pressed="true"] i{background:var(--water)}
+.detail{display:flex;flex-direction:column;gap:9px;min-width:0}
+.detail h3{font-size:1.25rem}
+.detail p{font-size:.93rem}
+.detail .muted{color:var(--muted)}
+.detail .note{font-size:.88rem;border-left:2px solid var(--wick);padding-left:10px;color:var(--muted)}
+.flow{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-family:var(--f-mono);font-size:12.5px}
+.specl{margin:0;padding-left:16px;display:flex;flex-direction:column;gap:5px;font-family:var(--f-mono);font-size:11.5px;line-height:1.5}
+.clear{align-self:flex-start;font-family:var(--f-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;background:transparent;color:var(--ink);border:1px solid var(--ink);padding:5px 10px;cursor:pointer}
+.clear:hover{border-color:var(--water);color:var(--water)}
+.specs{margin-top:28px;border-top:1px solid var(--ink)}
+.specs summary{cursor:pointer;padding:14px 0;font-family:var(--f-mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em}
+.specs summary:hover{color:var(--water)}
+.specs .tbl-scroll{margin-top:4px}
+.specs table{min-width:720px}
+.specs td.dep{font-size:11.5px;color:var(--muted);white-space:normal;min-width:120px}
+.specs th.pname{white-space:normal;font-family:var(--f-body);text-transform:none;letter-spacing:0;font-size:.92rem;color:var(--ink);font-weight:600;min-width:140px}
+.part{cursor:pointer;transition:opacity .2s}
+#xsec.focus .part{opacity:.22}
+#xsec.focus .part.is-sel{opacity:1}
+.mk{cursor:pointer}
+.mk circle{fill:var(--ink);stroke:var(--bg);stroke-width:1.5;transition:fill .15s}
+.mk text{fill:var(--bg);font-family:var(--f-mono);font-size:10px;font-weight:500;pointer-events:none}
+.mk:hover circle,.mk.is-sel circle{fill:var(--water)}
+.mk:focus{outline:none}
+.mk:focus-visible circle{stroke:var(--water);stroke-width:3}
+.x-air{fill:var(--bg)}
+.x-rock{fill:var(--stone);stroke:var(--muted);stroke-width:.35}
+.x-gravelp{fill:url(#pMed);opacity:.8}
+.x-trbg,.x-basinbg{fill:var(--surface)}
+.x-trench{fill:url(#pMed)}
+.x-fabric{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:3 2}
+.x-deep{fill:url(#pMed);opacity:.45;stroke:var(--muted);stroke-width:1;stroke-dasharray:4 3}
+.x-basin{fill:none;stroke:var(--ink);stroke-width:1.2}
+.x-grate{fill:var(--ink)}
+.x-slots{stroke:var(--bg);stroke-width:2;fill:none}
+.x-curb{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:3 3}
+.x-seal{fill:none;stroke:var(--water);stroke-width:7;opacity:.45;stroke-linecap:round}
+.x-res{fill:var(--water);opacity:.45}
+.x-riser{fill:none;stroke:var(--ink);stroke-width:1}
+.x-cap{fill:none;stroke:var(--ink);stroke-width:1;stroke-dasharray:2 2}
+.x-rim{stroke:var(--ink);stroke-width:2}
+.x-adj{fill:none;stroke:var(--muted);stroke-width:1}
+.x-hit{fill:none;stroke:transparent;stroke-width:14}
+.x-hitbox{fill:transparent}
+@media (max-width:1000px){
+  .xs-grid{grid-template-columns:minmax(0,1fr)}
+  .xs-panel{border-left:0;border-top:1px solid var(--rule)}
+  .chips{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:560px){
+  .chips{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+
+/* across-the-parkway figure */
+.xfig{margin:10px 0 4px;border:1px solid var(--rule);background:var(--surface)}
+.xfig .fig-scroll svg{min-width:560px}
+.xfig figcaption{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:8px 14px;border-top:1px solid var(--rule);font-family:var(--f-mono);font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.x-slab{fill:var(--surface);stroke:var(--ink);stroke-width:1}
+.x-ss{fill:var(--stone);opacity:.6}
+.x-asph{fill:var(--muted);opacity:.55}
+.x-barrier{stroke:var(--ink);stroke-width:3}
+.x-rootdeep{fill:none;stroke:var(--leaf);stroke-width:2.2;stroke-dasharray:6 3;stroke-linecap:round}
+.x-headr{fill:none;stroke:var(--leaf);stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.x-halo{paint-order:stroke;stroke:var(--surface);stroke-width:3px;stroke-linejoin:round}
+.xfig-bar{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:12px 14px;border-bottom:1px solid var(--rule)}
+.xfig-note{flex:1 1 260px;font-size:.88rem;color:var(--muted);min-width:0}
+#across.keep .ac-rebuild{display:none}
+#across:not(.keep) .ac-keep{display:none}
+.x-comp{fill:var(--soil-line);opacity:.45}
+.swipe{display:none}
+@media (max-width:640px){.swipe{display:inline}}
+
+/* mechanism */
+.steps{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--ink)}
+.steps li{display:grid;grid-template-columns:200px minmax(0,1fr);gap:clamp(16px,3vw,40px);padding:22px 0;border-bottom:1px solid var(--rule)}
+.step-l{display:flex;flex-direction:column;gap:4px}
+.step-n{font-family:var(--f-display);font-stretch:110%;font-weight:800;font-size:2.2rem;line-height:1;color:var(--water)}
+.step-b{display:flex;flex-direction:column;gap:8px;min-width:0}
+.step-b p{max-width:64ch}
+.step-b .figs{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+
+/* ladder */
+.ladder-note{margin-top:22px;font-size:.95rem;color:var(--muted);max-width:70ch}
+
+/* prototype */
+.proto-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-top:8px}
+.ph{display:flex;flex-direction:column;gap:8px;margin:0;min-width:0}
+.ph-frame{aspect-ratio:4/3;max-width:100%;border:1px dashed var(--muted);background:repeating-linear-gradient(135deg,var(--hatch) 0 10px,transparent 10px 20px);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:6px;text-align:center;padding:12px}
+.ph-frame b{font-family:var(--f-mono);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.09em}
+.ph-frame span{font-family:var(--f-mono);font-size:11px;color:var(--muted)}
+.ph figcaption{font-size:.88rem;color:var(--muted)}
+.proto-text{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(20px,4vw,48px);margin-top:32px}
+.proto-text>div{display:flex;flex-direction:column;gap:12px;min-width:0}
+.plain{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.passbox{border:1px solid var(--ink);padding:16px;display:flex;flex-direction:column;gap:8px}
+.passbox .big{font-family:var(--f-display);font-stretch:108%;font-weight:800;font-size:1.9rem;line-height:1.05;font-variant-numeric:tabular-nums}
+
+/* limits */
+.three{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(20px,3vw,40px);margin-top:8px}
+.three>div{display:flex;flex-direction:column;gap:10px;min-width:0;border-top:1px solid var(--ink);padding-top:14px}
+.three ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px;font-size:.95rem}
+
+/* pilot */
+.pilot{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:clamp(24px,4vw,56px);align-items:start}
+.pilot>div{display:flex;flex-direction:column;gap:14px;min-width:0}
+.contact{background:var(--ink);color:var(--bg);padding:20px;display:flex;flex-direction:column;gap:10px}
+.contact .eyebrow{color:inherit;opacity:.7}
+.contact .who{font-family:var(--f-display);font-stretch:108%;font-weight:750;font-size:1.3rem;line-height:1.15}
+.contact .role{font-size:.92rem;opacity:.8}
+.mail{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px}
+.mail code{font-family:var(--f-mono);font-size:14px;user-select:all;border:1px solid currentColor;padding:6px 10px;overflow-wrap:anywhere}
+.mail button{font-family:var(--f-mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;background:var(--bg);color:var(--ink);border:0;padding:8px 12px;cursor:pointer}
+.mail-status{font-family:var(--f-mono);font-size:11px;opacity:.75;min-height:1em}
+
+/* sources */
+.src{margin:8px 0 0;padding:0;list-style:none;counter-reset:s;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 40px}
+.src li{counter-increment:s;display:grid;grid-template-columns:2.2em minmax(0,1fr);font-size:.9rem;min-width:0}
+.src li::before{content:counter(s);font-family:var(--f-mono);font-size:12px;color:var(--water);padding-top:2px}
+.src a{overflow-wrap:anywhere;color:var(--muted)}
+.src a:hover{color:var(--ink)}
+
+/* footer */
+.foot{border-top:1px solid var(--ink)}
+.foot-in{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-block:20px;font-family:var(--f-mono);font-size:11.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+
+/* responsive */
+@media (max-width:900px){
+  .hero-grid,.sim-under,.proto-text,.pilot{grid-template-columns:minmax(0,1fr)}
+  .stats{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stat:nth-child(3){padding-left:0;border-left:0}
+  .stat:nth-child(n+3){border-top:1px solid var(--rule)}
+  .readouts{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .ro:nth-child(4){border-left:0}
+  .ro:nth-child(n+4){border-top:1px solid var(--rule)}
+  .three{grid-template-columns:minmax(0,1fr)}
+  .src{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .two,.proto-grid{grid-template-columns:minmax(0,1fr)}
+  .steps li{grid-template-columns:minmax(0,1fr);gap:10px}
+  .step-l{flex-direction:row;align-items:baseline;gap:12px}
+  .readouts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ro:nth-child(n){border-left:0;border-top:1px solid var(--rule)}
+  .ro:nth-child(1),.ro:nth-child(2){border-top:0}
+  .ro:nth-child(even){border-left:1px solid var(--rule)}
+}
+@media (max-width:440px){
+  .stats{grid-template-columns:minmax(0,1fr)}
+  .stat,.stat+.stat{padding-left:0;border-left:0}
+  .stat+.stat{border-top:1px solid var(--rule)}
+}
+</style>
+
+<header class="top" id="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#top"><span class="brand-code">TR/01</span><span class="brand-name">Treety</span></a>
+    <nav aria-label="Sections">
+      <a href="#section">Diagram</a>
+      <a href="#mechanism">Mechanism</a>
+      <a href="#prototype">Prototype</a>
+      <a href="#pilot">Pilot</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+<!-- 01 HERO -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div class="hero-main">
+        <p class="eyebrow">01 / Overview / Street trees / Los Angeles</p>
+        <h1><span>New street trees die of thirst.</span><span class="h1-b">Grown ones lift the sidewalk.</span></h1>
+        <p class="lede">Treety is a buried rain box with sand wicks. It catches curb runoff all winter and feeds it to a young tree through the dry season, only as fast as the soil dries. The water arrives 12–18 inches down on the curb side, so that is where the roots grow.</p>
+        <p class="soon"><i aria-hidden="true"></i>Prototype images coming soon</p>
+      </div>
+      <dl class="spec">
+        <dt>System</dt><dd>Treety street-tree kit</dd>
+        <dt>Source</dt><dd>Curb runoff from about 500 sq ft of street, about 280 gal per inch of rain</dd>
+        <dt>Storage</dt><dd>About 390 gal, 12–36 in. below grade</dd>
+        <dt>Delivery</dt><dd>6 sand wicks, outlets 14 in. deep</dd>
+        <dt>Power</dt><dd>None. Gravity in, capillary action out</dd>
+        <dt>Install</dt><dd>Parkway only; the existing sidewalk stays. Optional add-on when a sidewalk is being rebuilt</dd>
+        <dt>Upkeep</dt><dd>0–2 summer refills, down from 26–52 waterings</dd>
+        <dt>Status</dt><dd>Bench prototype in build</dd>
+      </dl>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="stat-n">$1.4B<sup><a href="#src-1" aria-label="Source 1">1</a></sup></div><p>LA's 30-year sidewalk repair commitment under the Willits settlement.</p></div>
+      <div class="stat"><div class="stat-n">92%<sup><a href="#src-2" aria-label="Source 2">2</a></sup></div><p>of downtown LA's rain falls November through April. Trees need water most from May to October.</p></div>
+      <div class="stat"><div class="stat-n">15 gal<sup><a href="#src-3" aria-label="Source 3">3</a></sup></div><p>a week is the usual dry-season watering for a new tree, for its first three years.</p></div>
+      <div class="stat"><div class="stat-n">85%<sup><a href="#src-4" aria-label="Source 4">4</a></sup></div><p>of a tree's roots grow in the top 18 inches of soil.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- 02 PROBLEM -->
+<section class="sec" id="problem">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">02</span><span class="eyebrow">Problem / new plantings / LA parkways</span></div>
+    <h2>Two failures with one cause: water in the wrong place.</h2>
+    <div class="two">
+      <div>
+        <span class="tag thirst">Thirst</span>
+        <p>A new street tree needs about 15 gallons a week through the May–October dry season, for three years.<a href="#src-3" class="fn">3</a> LA County asks residents to water new parkway trees about twice a week in warm months.<a href="#src-5" class="fn">5</a> That is 26 to 52 visits a summer per tree, by a resident, a volunteer, or a watering truck. When the visits stop, young trees die.</p>
+      </div>
+      <div>
+        <span class="tag heave">Heave</span>
+        <p>Water poured at the surface keeps roots shallow. Moisture also condenses under concrete, which makes the soil just under the slab the best spot around. Roots there thicken a little every year and push the slab up.</p>
+      </div>
+    </div>
+    <p class="punch">Treety moves the water to where we want the roots: deep, on the curb side, and only when the soil needs it.</p>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th scope="col"></th><th scope="col">Watering today</th><th scope="col">Treety</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Water</th><td class="them">Tap water, hauled by truck or hose</td><td class="us">Winter street runoff, stored on site</td></tr>
+          <tr><th scope="row">Lands at</th><td class="them">The surface</td><td class="us">12–18 in. down, curb side</td></tr>
+          <tr><th scope="row">Summer visits</th><td class="them">26–52 per tree</td><td class="us">0–2 refills</td></tr>
+          <tr><th scope="row">Overwatering</th><td class="them">Possible</td><td class="us">Wicks stop once the soil is damp</td></tr>
+          <tr><th scope="row">Roots</th><td class="them">Stay shallow, near the slab</td><td class="us">Grow down, away from the walk</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- 03 SECTION + YEAR -->
+<section class="sec" id="section">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">03</span><span class="eyebrow">Section / along the parkway / depths to scale</span></div>
+    <h2>Winter fills it. Summer drains it. The soil sets the pace.</h2>
+
+    <div class="sim">
+      <div class="sim-bar">
+        <button class="btn" id="play" type="button" aria-label="Play one year">Play</button>
+        <label class="scrub" for="week"><span class="seg-l">Week</span><input id="week" type="range" min="0" max="51" step="1" value="44"><output id="dateOut" for="week">Aug 5</output></label>
+        <div class="seg"><span class="seg-l" id="rainLbl">Winter</span>
+          <div class="seg-b" role="group" aria-labelledby="rainLbl">
+            <button type="button" id="rainTyp" aria-pressed="true">Typical 14.3 in.</button><button type="button" id="rainDry" aria-pressed="false">Dry 7.1 in.</button>
+          </div></div>
+        <div class="seg"><span class="seg-l" id="useLbl">Summer use</span>
+          <div class="seg-b" role="group" aria-labelledby="useLbl">
+            <button type="button" id="use15" aria-pressed="true">15 gal/wk</button><button type="button" id="use20" aria-pressed="false">20 gal/wk</button>
+          </div></div>
+      </div>
+
+      <div class="xs-grid">
+        <div class="fig-scroll xs-fig">
+          <svg id="xsec" viewBox="0 0 720 420" role="group" aria-labelledby="xsecT">
+            <title id="xsecT">Treety long section along the parkway. Tap a numbered part for details.</title>
+            <defs>
+              <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="x-head" d="M2 1L8 5L2 9"/></marker>
+              <pattern id="pCoarse" width="9" height="9" patternUnits="userSpaceOnUse"><circle class="x-rock" cx="4.5" cy="4.5" r="3.8"/></pattern>
+              <pattern id="pMed" width="6" height="6" patternUnits="userSpaceOnUse"><circle class="x-rock" cx="3" cy="3" r="2.3"/></pattern>
+              <pattern id="pFine" width="3.6" height="3.6" patternUnits="userSpaceOnUse"><circle class="x-rock" cx="1.8" cy="1.8" r="1.25"/></pattern>
+            </defs>
+
+            <!-- 12 soil + root barrier (background; select via marker or list) -->
+            <g class="part" data-part="soil">
+              <rect class="x-soil" x="60" y="90" width="640" height="322" style="pointer-events:none"/>
+            </g>
+            <!-- curb opening cut-out above the inlet -->
+            <rect class="x-air" x="516" y="90" width="68" height="36" style="pointer-events:none"/>
+
+            <!-- 8 sweet spot -->
+            <g class="part" data-part="sweet">
+              <rect class="x-sweet" x="92" y="150" width="160" height="60"/>
+            </g>
+
+            <!-- 9 tree -->
+            <g class="part" data-part="tree">
+              <ellipse class="x-canopy" cx="140" cy="42" rx="54" ry="32"/>
+              <rect class="x-trunk" x="135" y="70" width="10" height="21"/>
+              <ellipse class="x-ball" cx="140" cy="138" rx="44" ry="48"/>
+              <path class="x-root" d="M176 160 Q186 167 190 172"/>
+              <path class="x-root" d="M168 176 Q196 188 212 177"/>
+              <path class="x-root" d="M150 185 Q202 206 234 179"/>
+            </g>
+
+            <!-- 4 storage box (with live water) -->
+            <g class="part" data-part="box">
+              <rect class="x-gravel" x="258" y="306" width="208" height="24"/>
+              <rect class="x-gravelp" x="258" y="306" width="208" height="24"/>
+              <rect class="x-boxfill" x="262" y="162" width="200" height="144"/>
+              <rect class="x-water" id="xWater" x="264" y="192" width="196" height="112"/>
+              <rect class="x-res" x="264" y="297" width="196" height="7"/>
+              <line class="x-wline" id="xWline" x1="264" y1="192" x2="460" y2="192"/>
+              <line class="x-ofline" x1="264" y1="192" x2="460" y2="192"/>
+              <rect class="x-boxwall" x="262" y="162" width="200" height="144"/>
+              <text class="x-tw" id="xGal" x="352" y="236" text-anchor="middle">390 gal</text>
+            </g>
+
+            <!-- 7 sand wicks -->
+            <g class="part" data-part="wicks">
+              <path class="x-hit" d="M300 302 L190 302 L190 176 M312 303 L312 296 L212 296 L212 176 M324 303 L324 290 L234 290 L234 176"/>
+              <path class="x-wick" d="M300 302 L190 302 L190 178"/>
+              <path class="x-wick" d="M312 303 L312 296 L212 296 L212 178"/>
+              <path class="x-wick" d="M324 303 L324 290 L234 290 L234 178"/>
+              <circle class="x-wickend" cx="190" cy="174" r="4.5"/><circle class="x-wickend" cx="212" cy="174" r="4.5"/><circle class="x-wickend" cx="234" cy="174" r="4.5"/>
+            </g>
+
+            <!-- 10 service box -->
+            <g class="part" data-part="service">
+              <rect class="x-hitbox" x="420" y="82" width="40" height="82"/>
+              <rect class="x-riser" x="428" y="91" width="24" height="71"/>
+              <rect class="x-part" x="424" y="86" width="32" height="5"/>
+            </g>
+
+            <!-- 11 vent -->
+            <g class="part" data-part="vent">
+              <line class="x-hit" x1="404" y1="162" x2="404" y2="84"/>
+              <line class="x-vent" x1="404" y1="162" x2="404" y2="90"/>
+              <rect class="x-cap" x="398" y="84" width="12" height="6"/>
+            </g>
+
+            <!-- 5 overflow standpipe -->
+            <g class="part" data-part="standpipe">
+              <path class="x-hit" d="M440 190 L440 270 L500 270"/>
+              <g class="x-flow" id="xOverPipe"><path class="x-pipe" d="M440 194 L440 270 L498 270"/></g>
+              <line class="x-rim" x1="433" y1="192" x2="447" y2="192"/>
+              <path class="x-adj" d="M452 184 L452 206 M449 188 L452 184 L455 188 M449 202 L452 206 L455 202"/>
+            </g>
+
+            <!-- 6 gravel trench -->
+            <g class="part" data-part="trench">
+              <rect class="x-trbg" x="490" y="258" width="170" height="120"/>
+              <rect class="x-trench" x="490" y="258" width="170" height="120"/>
+              <path class="x-fabric" d="M490 378 L490 258 L660 258 L660 378"/>
+              <rect class="x-part" x="498" y="264" width="6" height="12"/>
+              <rect class="x-deep" x="535" y="378" width="90" height="32"/>
+              <g class="x-flow" id="xOverOut">
+                <line class="x-vent" x1="560" y1="382" x2="560" y2="404" marker-end="url(#arr)"/>
+                <line class="x-vent" x1="600" y1="382" x2="600" y2="404" marker-end="url(#arr)"/>
+              </g>
+            </g>
+
+            <!-- 1 curb inlet + grate -->
+            <g class="part" data-part="inlet">
+              <rect class="x-hitbox" x="512" y="100" width="140" height="30"/>
+              <g class="x-flow on" id="xIn"><path class="x-pipe" d="M648 112 L600 112 Q586 112 578 120"/><line class="x-vent" x1="578" y1="120" x2="570" y2="126" marker-end="url(#arr)"/></g>
+              <rect class="x-grate" x="516" y="124" width="68" height="5"/>
+              <path class="x-slots" d="M526 124 V129 M538 124 V129 M550 124 V129 M562 124 V129 M574 124 V129"/>
+              <path class="x-curb" d="M516 90 V124 M584 90 V124"/>
+            </g>
+
+            <!-- 2 rock filter -->
+            <g class="part" data-part="filter">
+              <rect class="x-basinbg" x="516" y="129" width="68" height="47"/>
+              <rect x="517" y="129" width="66" height="9" fill="url(#pCoarse)"/>
+              <rect x="517" y="138" width="66" height="24" fill="url(#pMed)"/>
+              <rect x="517" y="162" width="66" height="13" fill="url(#pFine)"/>
+              <rect class="x-basin" x="516" y="124" width="68" height="52"/>
+            </g>
+
+            <!-- 3 flap valve (inlet pipe slopes straight to the box) -->
+            <g class="part" data-part="trap">
+              <path class="x-hit" d="M550 176 L550 181 L466 186"/>
+              <g class="x-flow on" id="xInPipe"><path class="x-pipe" d="M550 176 L550 181 L470 186"/></g>
+              <rect class="x-part" x="462" y="180" width="8" height="12"/>
+            </g>
+
+            <!-- grade line + depth scale -->
+            <path class="x-grade" d="M60 90 H516 M584 90 H700"/>
+            <line class="x-lead" x1="46" y1="90" x2="46" y2="378"/>
+            <g class="x-thin"><line x1="42" y1="90" x2="50" y2="90"/><line x1="42" y1="162" x2="50" y2="162"/><line x1="42" y1="192" x2="50" y2="192"/><line x1="42" y1="306" x2="50" y2="306"/><line x1="42" y1="378" x2="50" y2="378"/></g>
+            <text class="x-tm" x="38" y="94" text-anchor="end">0″</text>
+            <text class="x-tm" x="38" y="166" text-anchor="end">12″</text>
+            <text class="x-tm" x="38" y="196" text-anchor="end">17″</text>
+            <text class="x-tm" x="38" y="310" text-anchor="end">36″</text>
+            <text class="x-tm" x="38" y="382" text-anchor="end">48″</text>
+            <text class="x-tm" x="38" y="78" text-anchor="end">grade</text>
+
+            <!-- numbered markers -->
+            <g id="markers"></g>
+          </svg>
+        </div>
+
+        <aside class="xs-panel" aria-label="Part details">
+          <div class="chips" id="chips"></div>
+          <div class="detail" id="xsDetail" aria-live="polite"></div>
+        </aside>
+      </div>
+      <div class="fig-cap"><span>Depths to scale. Lengths shortened. Full box 2.5 × 14 ft</span><span>Tap a number for details<span class="swipe"> · swipe sideways for the rest</span></span></div>
+
+      <div class="fig-scroll" style="border-top:1px solid var(--rule)">
+        <svg id="chart" viewBox="0 0 680 236" role="img" aria-labelledby="chartT">
+          <title id="chartT">Gallons in the box each week of the year, with weekly rain</title>
+          <g id="chartG"></g>
+        </svg>
+      </div>
+
+      <div class="readouts">
+        <div class="ro"><span>Date</span><b id="roDate">Aug 5</b></div>
+        <div class="ro"><span>In the box</span><b id="roGal">0<small>gal</small></b></div>
+        <div class="ro"><span>Water surface</span><b id="roDepth">0<small>in. deep</small></b></div>
+        <div class="ro"><span>Wick climb</span><b id="roClimb">0<small>in.</small></b></div>
+        <div class="ro"><span>Refills / yr</span><b id="roRefill">0</b></div>
+        <div class="ro"><span>Overflow / yr</span><b id="roOver">0<small>gal</small></b></div>
+      </div>
+    </div>
+
+    <div class="sim-under">
+      <div class="howto">
+        <h3>How to read it</h3>
+        <p>Tap any number for what that part does and its specs. Blue is stored water. It can't rise above the standpipe rim at 17 in.; anything more drops down the standpipe into the gravel trench. The tan lines are sand wicks: each starts in the reserve at the box floor and rises to an outlet at 14 in., inside the green sweet spot.</p>
+        <p>As the box drains, the wick climb gets longer: 3 in. when full, about 21 in. near empty. That climb is exactly what the prototype tests.</p>
+      </div>
+      <div>
+        <p>The year runs from October 1 and uses downtown LA's average monthly rain.<a href="#src-2" class="fn">2</a> About 280 gallons reach the box per inch of rain, from roughly 500 sq ft of street. A tan triangle on the chart marks a 150-gallon crew refill, triggered when the box falls to its 25-gallon reserve.</p>
+        <p style="margin-top:10px">Even a dry winter fills the box, because about 1.4 in. of rain fills it from empty. What decides refills is how long and hot the dry season runs.</p>
+      </div>
+    </div>
+
+    <details class="specs">
+      <summary>Full parts list and specs</summary>
+      <div class="tbl-scroll">
+        <table>
+          <thead><tr><th scope="col">#</th><th scope="col">Part</th><th scope="col">Depth</th><th scope="col">Spec</th></tr></thead>
+          <tbody id="specRows"></tbody>
+        </table>
+      </div>
+    </details>
+  </div>
+</section>
+
+<!-- 04 MECHANISM -->
+<section class="sec" id="mechanism">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">04</span><span class="eyebrow">Mechanism / five moves / no pumps, no power</span></div>
+    <h2>Gravity brings the water in. The soil decides when it comes out.</h2>
+    <ol class="steps">
+      <li>
+        <div class="step-l"><span class="step-n">1</span><span class="eyebrow">Step 1 / Capture</span></div>
+        <div class="step-b"><h3>Street runoff fills the box</h3>
+          <p>Gutter water flows through a curb opening onto a grate that catches trash and leaves. Below it, three layers of washed rock, coarse to fine, strip out grit. A flap valve at the box wall lets the clean water in and shuts behind it. About 280 gallons arrive per inch of rain.</p>
+          <p class="figs">Grate → 1½ in. rock → ¾ in. rock → ⅜ in. pea gravel → flap valve → box</p></div>
+      </li>
+      <li>
+        <div class="step-l"><span class="step-n">2</span><span class="eyebrow">Step 2 / Store</span></div>
+        <div class="step-b"><h3>A box the tree can't flood</h3>
+          <p>Plastic storage crates in a welded liner, 12–36 in. below grade. An adjustable standpipe with its rim at 17 in. caps the water level and sends the extra to a gravel trench, where it soaks down into deep soil. Above the rim is surge space for storms. Flap valves on the inlet and overflow, a gasketed lid, and a screened vent seal it against mosquitoes, as California's mosquito guidance asks for anything that holds water longer than 72 hours.<a href="#src-6" class="fn">6</a></p>
+          <p class="figs">2.5 × 14 ft · overflow 17 in. · about 390 gal · dig 3.3 ft (4 ft at the trench)</p></div>
+      </li>
+      <li>
+        <div class="step-l"><span class="step-n">3</span><span class="eyebrow">Step 3 / Release</span></div>
+        <div class="step-b"><h3>Water moves only when the soil pulls</h3>
+          <p>Six U-shaped sand wicks start in the reserve water at the box floor and rise to outlets 14 in. down. Capillary action lifts water as the soil around each outlet dries, and slows to nothing when it is damp. The outlets sit above the overflow line, so the wicks can't siphon the box empty. The fill is a silt-rich sandy mix: in lab columns, plain fine sand lifted water only about 8 in., while silt lifted it about 5 ft.<a href="#src-7" class="fn">7</a></p>
+          <p class="figs">Tree needs 8–11 L/day · estimate about 3 L/day per 4 in. wick · 6 wicks</p></div>
+      </li>
+      <li>
+        <div class="step-l"><span class="step-n">4</span><span class="eyebrow">Step 4 / Steer</span></div>
+        <div class="step-b"><h3>Roots grow where the soil is best</h3>
+          <p>Roots don't hunt for water. The ones that land in damp, airy soil grow and thicken fastest. Treety puts that soil at 10–20 in. on the curb side, and a root barrier runs along the sidewalk edge of the parkway. The sidewalk itself has two options. Keep it: no sidewalk work at all, and the barrier and sweet spot do the steering. Or, where a city is replacing the walk anyway, add a gravel layer under the new slab to break up the damp film that draws roots up; in a long-term field comparison, a barrier and a gravel layer were among the treatments with the least lifting.<a href="#src-8" class="fn">8</a> Structural soil down to 36 in. under the new walk then gives roots room to cross deep, toward the yard.<a href="#src-9" class="fn">9</a></p>
+          <figure class="xfig">
+            <div class="xfig-bar">
+              <div class="seg"><span class="seg-l" id="swLbl">Sidewalk</span>
+                <div class="seg-b" role="group" aria-labelledby="swLbl">
+                  <button type="button" id="swKeep" aria-pressed="true">Keep existing</button><button type="button" id="swRebuild" aria-pressed="false">Rebuild with structural soil</button>
+                </div></div>
+              <p class="xfig-note" id="swNote">No sidewalk work. The barrier goes in from the parkway side, and the curb-side sweet spot gives roots a better place to go. Less room for roots, so plant a smaller-canopy tree.</p>
+            </div>
+            <div class="fig-scroll">
+              <svg id="across" class="keep" viewBox="-12 0 652 286" role="img" aria-labelledby="acrossT acrossD">
+                <title id="acrossT">Across the parkway: how Treety steers roots away from the sidewalk</title>
+                <desc id="acrossD">Cross-section from the yard to the street, depths to scale. A root barrier runs down the sidewalk edge of the parkway to 24 inches. The tree's main roots grow toward a damp sweet spot on the curb side, 10 to 20 inches deep, where the wick outlets are, and a shallow root heading for the sidewalk stops at the barrier. With the existing sidewalk kept, the old base under the slab is untouched and deep roots grow down within the parkway. With a rebuilt sidewalk, a gravel layer sits under the new slab with structural soil down to 36 inches, and a deep root crosses under the walk at depth.</desc>
+                <defs>
+                  <marker id="arrR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path class="x-headr" d="M2 1L8 5L2 9"/></marker>
+                </defs>
+                <!-- ground -->
+                <rect class="x-soil" x="34" y="70" width="501" height="200"/>
+                <rect class="x-soil" x="535" y="100" width="95" height="170"/>
+                <!-- option: keep existing sidewalk (old base untouched) -->
+                <g class="ac-keep"><rect class="x-comp" x="120" y="90" width="180" height="160"/></g>
+                <!-- option: rebuild sidewalk: gravel 4–7 in., structural soil 7–36 in. -->
+                <g class="ac-rebuild">
+                  <rect class="x-ss" x="120" y="105" width="180" height="145"/>
+                  <rect class="x-trbg" x="120" y="90" width="180" height="15"/>
+                  <rect x="120" y="90" width="180" height="15" fill="url(#pFine)"/>
+                </g>
+                <!-- sidewalk slab, 4 in. -->
+                <rect class="x-slab" x="120" y="70" width="180" height="20"/>
+                <!-- curb and street -->
+                <rect class="x-slab" x="515" y="70" width="20" height="90"/>
+                <rect class="x-asph" x="535" y="100" width="95" height="16"/>
+                <path class="x-grade" d="M34 70 H120 M300 70 H515 M535 100 H630"/>
+                <!-- sweet spot + wick outlets -->
+                <rect class="x-sweet" x="418" y="120" width="94" height="50"/>
+                <circle class="x-wickend" cx="450" cy="140" r="4.5"/><circle class="x-wickend" cx="484" cy="140" r="4.5"/>
+                <!-- tree -->
+                <ellipse class="x-canopy" cx="390" cy="30" rx="46" ry="22"/>
+                <rect class="x-trunk" x="386" y="48" width="8" height="23"/>
+                <ellipse class="x-ball" cx="390" cy="110" rx="40" ry="40"/>
+                <path class="x-root" d="M428 112 Q442 124 450 135"/>
+                <path class="x-root" d="M424 130 Q458 152 484 144"/>
+                <path class="x-root" d="M412 144 Q452 172 502 158"/>
+                <!-- shallow root stopped at barrier -->
+                <path class="x-root" d="M354 96 Q330 94 306 96"/>
+                <!-- deep root: down in the parkway (keep) or crossing under the walk (rebuild) -->
+                <path class="x-rootdeep ac-keep" d="M372 146 Q362 196 346 234" marker-end="url(#arrR)"/>
+                <path class="x-rootdeep ac-rebuild" d="M372 146 Q352 198 312 212 L298 214 Q250 222 176 230" marker-end="url(#arrR)"/>
+                <!-- root barrier, 0–24 in. -->
+                <line class="x-barrier" x1="300" y1="70" x2="300" y2="190"/>
+                <!-- depth ruler -->
+                <line class="x-lead" x1="24" y1="70" x2="24" y2="250"/>
+                <g class="x-thin"><line x1="20" y1="70" x2="28" y2="70"/><line x1="20" y1="130" x2="28" y2="130"/><line x1="20" y1="190" x2="28" y2="190"/><line x1="20" y1="250" x2="28" y2="250"/></g>
+                <text class="x-tm" x="16" y="74" text-anchor="end">0″</text>
+                <text class="x-tm" x="16" y="134" text-anchor="end">12″</text>
+                <text class="x-tm" x="16" y="194" text-anchor="end">24″</text>
+                <text class="x-tm" x="16" y="254" text-anchor="end">36″</text>
+                <!-- labels -->
+                <text class="x-tm" x="77" y="18" text-anchor="middle">YARD</text>
+                <text class="x-tm" x="210" y="18" text-anchor="middle">SIDEWALK</text>
+                <text class="x-tm" x="470" y="18" text-anchor="middle">PARKWAY</text>
+                <text class="x-tm" x="525" y="62" text-anchor="middle">CURB</text>
+                <text class="x-tm" x="583" y="92" text-anchor="middle">STREET</text>
+                <text class="x-t" x="300" y="44" text-anchor="middle">Root barrier</text>
+                <line class="x-lead" x1="300" y1="48" x2="300" y2="68"/>
+                <g class="ac-keep">
+                  <text class="x-t x-halo" x="210" y="146" text-anchor="middle">Existing base,</text>
+                  <text class="x-t x-halo" x="210" y="162" text-anchor="middle">untouched</text>
+                  <text class="x-t x-halo" x="318" y="262">Roots go down</text>
+                </g>
+                <g class="ac-rebuild">
+                  <text class="x-t x-halo" x="210" y="101" text-anchor="middle">Gravel layer</text>
+                  <text class="x-t x-halo" x="210" y="146" text-anchor="middle">Structural soil</text>
+                  <text class="x-t x-halo" x="210" y="162" text-anchor="middle">to 36″</text>
+                  <text class="x-t x-halo" x="128" y="246">Roots cross deep</text>
+                </g>
+                <text class="x-t" x="465" y="186" text-anchor="middle">Sweet spot</text>
+              </svg>
+            </div>
+            <figcaption><span>Across the parkway. Depths to scale, widths shortened</span><span>The storage box runs along the curb side, just out of this cut</span></figcaption>
+          </figure>
+
+          <p class="figs">Barrier on the sidewalk side only. Never a ring around the tree.</p></div>
+      </li>
+      <li>
+        <div class="step-l"><span class="step-n">5</span><span class="eyebrow">Step 5 / Long term</span></div>
+        <div class="step-b"><h3>Then it keeps working</h3>
+          <p>Roots can't get into the box: the bottom of each U stays underwater, and roots stop at soaked, airless soil. In years 3–5 a crew slides the standpipe down a few inches at a time, so more winter water drains to the gravel trench and deep soil, and the roots follow it down. After that, the tree won't necessarily need the water, but the box stays in the ground for good: as drought backup that keeps roots on the curb side, or switched to recharge mode, sending most of each storm down toward groundwater.</p>
+          <p class="figs">Each inch the standpipe drops moves about 20 gal from storage to the deep soil</p></div>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<!-- 05 LADDER -->
+<section class="sec" id="ladder">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">05</span><span class="eyebrow">Long term / depth ladder / year 0 and on</span></div>
+    <h2>Stays in the ground. Keeps working.</h2>
+    <p class="measure">Treety is permanent. It trains the roots deep over the first five years, and after that an established tree may not need its water at all. In most of LA, groundwater sits far below a street tree's roots, so the tree lives mainly on winter rain held in deep, roomy soil.<a href="#src-10" class="fn">10</a> The box stays either way, and the city picks how it works from year 5 on.</p>
+    <div class="tbl-scroll">
+      <table>
+        <thead><tr><th scope="col">Phase</th><th scope="col">Years</th><th scope="col">What the box does</th><th scope="col">Standpipe rim</th><th scope="col">Human work</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Establish</th><td>0–2</td><td>Wicks keep 12–18 in. moist</td><td>17 in.</td><td>0–2 summer refills</td></tr>
+          <tr><th scope="row">Train deep</th><td>3–5</td><td>More winter water drains to the gravel trench and deep soil (28–48 in.); shallow soil dries between storms</td><td>20 → 23 in.</td><td>Refills only in heat waves</td></tr>
+          <tr><th scope="row">Backup</th><td>5+</td><td>Wicks stay in. The curb-side sweet spot stays the tree's best soil, so roots stay off the walk, and the box carries the tree through droughts and heat waves</td><td>23 in., raised in a drought</td><td>Rinse the rock filter, vacuum silt, swap clogged wick cartridges</td></tr>
+          <tr><th scope="row">Recharge</th><td>5+</td><td>Keeps about 120 gal in reserve and sends the rest of each storm down through the gravel trench: about 3,000 gal a year in a typical year, 1,300 in a dry one</td><td>About 30 in.</td><td>Rinse the rock filter and vacuum silt once a year</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="ladder-note">Sensors at the outlets and in the box tell a crew when to refill and when a tree is ready to move down a rung. Watering deeply and infrequently is what builds a deep, drought-tough root system.<a href="#src-11" class="fn">11</a></p>
+  </div>
+</section>
+
+<!-- 06 PROTOTYPE -->
+<section class="sec" id="prototype">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">06</span><span class="eyebrow">Prototype / Rig A / wick bench</span></div>
+    <h2>Prototype images coming soon.</h2>
+    <div class="proto-grid">
+      <figure class="ph"><div class="ph-frame"><b>Image coming soon</b><span>Rig A, full bench</span></div><figcaption>Four wick tubes, reservoirs, and trays on scales.</figcaption></figure>
+      <figure class="ph"><div class="ph-frame"><b>Image coming soon</b><span>Dye front at 24 in.</span></div><figcaption>Time-lapse of water climbing a clear tube.</figcaption></figure>
+      <figure class="ph"><div class="ph-frame"><b>Image coming soon</b><span>First flow chart</span></div><figcaption>Grams per day moved by each fill, at each climb.</figcaption></figure>
+    </div>
+    <div class="proto-text">
+      <div>
+        <h3>What we're building</h3>
+        <p>Rig A tests the one number we couldn't find published for this use: how much water a sand wick can lift 24 inches, day after day.</p>
+        <ul class="plain">
+          <li>Four 2 in. PVC tubes, about 30 in. long, each packed with a different fill: fine sand; 85/15 sand and silica flour; 70/30; sandy loam. One tube is clear so the rising water shows.</li>
+          <li>Each tube stands in a constant-level reservoir (an inverted 2-liter bottle feeding a small tub) and feeds a tray of sandy loam above it.</li>
+          <li>A box fan dries the trays the way a summer dries a parkway. A fifth tray holds plain water, to measure how fast the fan dries things.</li>
+          <li>Each reservoir sits on a kitchen scale, so grams lost per day equals water the wick moved. We test climbs of 24, 18, 12, and 6 in., hardest first.</li>
+        </ul>
+      </div>
+      <div>
+        <div class="passbox">
+          <span class="eyebrow">Pass mark</span>
+          <span class="big">1.3–1.8 L/day</span>
+          <p>per field wick, so that six wicks together cover a young tree's 8–11 liters a day. A 2 in. bench tube has about a quarter of the area of a 4 in. field wick, so it passes at about 0.35–0.5 L/day.</p>
+        </div>
+        <p>The winning fill goes into the full design and into our root simulation. Photos, the time-lapse, and the first flow data will post here as the bench runs.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 07 LIMITS -->
+<section class="sec" id="limits">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">07</span><span class="eyebrow">Model / data / limits</span></div>
+    <h2>What we know, and what we're testing.</h2>
+    <div class="three">
+      <div>
+        <span class="tag">Proven on its own</span>
+        <ul>
+          <li>Deep, infrequent watering grows deeper roots.</li>
+          <li>A root barrier or a gravel layer under the walk had the least sidewalk lifting in a long-term field comparison.</li>
+          <li>Wicking beds keep soil moist from a reservoir below.</li>
+          <li>Curb-fed tree pits capture and clean street runoff.</li>
+        </ul>
+      </div>
+      <div>
+        <span class="tag">Still open</span>
+        <ul>
+          <li>All of it together in a real LA parkway over several summers.</li>
+          <li>Wick flow at a 24 in. climb. Our 3 L/day estimate assumes the fill stays saturated; Rig A measures it.</li>
+          <li>How fast roots fill the wick legs. Wicks are pull-out cartridges for that reason.</li>
+          <li>Structural soil on its own. In that same comparison it had the most lifting (the differences weren't statistically significant), so Treety only uses it with the barrier and gravel layer.</li>
+          <li>Keeping the existing sidewalk: how well the barrier and the curb-side sweet spot hold roots without a gravel break under the old slab.</li>
+          <li>Approvals: a city tree permit, a public works standard plan, and vector control sign-off for the sealed box.</li>
+        </ul>
+      </div>
+      <div>
+        <span class="tag">What the year model leaves out</span>
+        <ul>
+          <li>Storm timing. Rain is spread evenly through each month, and the first 0.25 in. a month is assumed to wet the pavement without reaching the box.</li>
+          <li>Heat waves. Tree use is fixed: 15 or 20 gal/week May–October, 5 gal/week November–April.</li>
+          <li>Water held in the surrounding soil, an extra buffer on top of the box.</li>
+          <li>Site limits. The gravel trench needs soil that absorbs at least 0.3 in./hr, must sit 10 ft from foundations and property lines, and needs its bottom at least 10 ft above groundwater. Every site starts with a DigAlert utility check.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 08 PILOT -->
+<section class="sec" id="pilot">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">08</span><span class="eyebrow">Pilot / 2–3 trees / one dry season</span></div>
+    <div class="pilot">
+      <div>
+        <h2>Host a pilot tree.</h2>
+        <p class="measure">We're looking for a city, a planting nonprofit, or a developer to host two or three Treety trees and monitor them through one dry season, May to October. That summer is the real proof.</p>
+        <p class="measure">CAL FIRE's Urban &amp; Community Forestry grants have funded tree planting, establishment care, and site improvements like bioswales, so Treety can be written into a city or nonprofit's application when the next round opens.<a href="#src-12" class="fn">12</a></p>
+      </div>
+      <div class="contact">
+        <span class="eyebrow">Contact</span>
+        <span class="who">Miles Silverman</span>
+        <span class="role">Team lead, Treety · Civil Engineering Student, USC Viterbi</span>
+        <div class="mail"><code id="email">milessil@usc.edu</code><button type="button" id="copyBtn">Copy</button></div>
+        <span class="mail-status" id="copyStatus" aria-live="polite"></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 09 SOURCES -->
+<section class="sec" id="sources">
+  <div class="wrap">
+    <div class="sec-head"><span class="num">09</span><span class="eyebrow">Sources</span></div>
+    <ol class="src">
+      <li id="src-1"><span>TreePeople, on the Willits settlement: $1.4 billion over 30 years for LA sidewalk repair. <a href="https://treepeople.org/?p=3305" target="_blank" rel="noopener">treepeople.org</a></span></li>
+      <li id="src-2"><span>National Weather Service Los Angeles, 1991–2020 climate normals, downtown LA (14.25 in./yr). <a href="https://www.weather.gov/media/lox/statements/pns_20210505_newnormals.pdf" target="_blank" rel="noopener">weather.gov</a></span></li>
+      <li id="src-3"><span>Alameda County, new street tree care: 15 gallons once a week, May–October, for the first 3 years. <a href="https://www.acgov.org/cda/planning/sustainability/documents/Tree-care-instructions_ENG.pdf" target="_blank" rel="noopener">acgov.org</a></span></li>
+      <li id="src-4"><span>Colorado State Forest Service: about 85% of a tree's roots are in the top 18 inches. <a href="https://csfs.colostate.edu/wp-content/uploads/2014/04/Tips-for-Healthy-Trees_Updated-Aug2010.pdf" target="_blank" rel="noopener">csfs.colostate.edu</a></span></li>
+      <li id="src-5"><span>LA County Public Works, parkway tree care: water about twice a week in warm months for about 3 years. <a href="https://ladpw.org/rmd/parkwaytrees/resource/bf/Parkway%20Tree%20Care%20Door%20Hanger%20English.pdf" target="_blank" rel="noopener">ladpw.org</a></span></li>
+      <li id="src-6"><span>UC IPM, mosquitoes and stormwater structures: 72-hour rule, 2 mm openings, flap valves. <a href="https://ipm.ucanr.edu/PMG/PESTNOTES/mosquitostormwater5.html" target="_blank" rel="noopener">ipm.ucanr.edu</a></span></li>
+      <li id="src-7"><span>Capillary rise in sand and silt columns: about 20 cm in fine sand, about 155 cm in silt (ASA, CSSA, SSSA meeting paper). <a href="https://scisoc.confex.com/crops/2012am/webprogram/Paper73761.html" target="_blank" rel="noopener">scisoc.confex.com</a></span></li>
+      <li id="src-8"><span>Smiley, "Comparison of Methods to Reduce Sidewalk Damage from Tree Roots," Arboriculture &amp; Urban Forestry, 2008. <a href="https://auf.isa-arbor.com/content/34/3/179" target="_blank" rel="noopener">auf.isa-arbor.com</a></span></li>
+      <li id="src-9"><span>Cornell Urban Horticulture Institute, Using CU-Structural Soil: at least 24 in. deep, preferably 36. <a href="https://stormwateruffrec.s4.es.cloud.vt.edu/Resources/CU-StructuralSoil.pdf" target="_blank" rel="noopener">Cornell guide (PDF)</a></span></li>
+      <li id="src-10"><span>Minnesota Stormwater Manual, minimum soil volume for trees. <a href="https://stormwater.pca.state.mn.us/Studies_analyzing_minimum_soil_volume_needed_by_trees" target="_blank" rel="noopener">stormwater.pca.state.mn.us</a></span></li>
+      <li id="src-11"><span>University of Arizona Extension, watering trees deeply and infrequently. <a href="https://extension.arizona.edu/publication/watering-trees-and-shrubs-simple-techniques-efficient-landscape-watering" target="_blank" rel="noopener">extension.arizona.edu</a></span></li>
+      <li id="src-12"><span>CAL FIRE Urban and Community Forestry Grant Program (program description, past round). <a href="https://www.grants.ca.gov/grants/cal-fire-urban-and-community-forestry-grant-program/" target="_blank" rel="noopener">grants.ca.gov</a></span></li>
+    </ol>
+  </div>
+</section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <span>In progress / USC Tie-Hub SHIP Fund / Fall 2026 / Team Treety</span>
+    <span>Concept explainer · not for construction</span>
+  </div>
+</footer>
+
+<script>
+(function(){
+  // ---------- parts data (diagram detail panel + specs table) ----------
+  var PARTS=[
+    {id:"inlet",n:1,x:676,y:112,name:"Curb inlet + grate",depth:"Top at gutter level, about 6″ below the curb top",
+     what:"An opening in the curb lets gutter water flow sideways into a basin. A grate across the top catches trash and leaves first.",
+     spec:["Grate: 12 in. square, rated about 155 gal/min (NDS 1211G)","Basin: 12 in. catch basin with a 4 in. outlet","Catchment: about 500 sq ft of street, so about 280 gal per inch of rain (roughly 90% runs off)","Storms bring roughly 50–280 gal/hr, far below the grate's limit"],
+     note:"Upkeep: clear the grate after big storms. It sits at the curb, so nothing has to be dug up."},
+    {id:"filter",n:2,x:602,y:152,name:"Rock filter",depth:"6–14″",
+     what:"Three layers of washed rock that get finer as the water moves down. Leaves and litter stop on top, grit stops lower down, and the rock drains dry between storms.",
+     spec:["Top: 2 in. of 1½ in. rock (ASTM #4)","Middle: 4 in. of ¾ in. rock (ASTM #57)","Bottom: 2 in. of ⅜ in. pea gravel (ASTM #8)","All double-washed, under 1% fines","Sits in a lift-out basket so a crew can rinse it","No sand layer: sand passes only about 3 gal/hr through a 12 in. basin, a few percent of storm flow"],
+     note:"The rock cleans the water but isn't a mosquito seal: mosquitoes squeeze through gaps as small as 1/16 in. (2 mm), and pea gravel has gaps that size. The flap valve below is the seal, and the rock keeps debris from jamming it."},
+    {id:"trap",n:3,x:488,y:206,name:"Flap valve",depth:"At the box wall, 16″",
+     what:"A hinged flap where the inlet pipe enters the box. Storm water pushes it open; the rest of the time it hangs shut, so mosquitoes can't reach the stored water. The rock filter above keeps leaves and twigs from propping it open.",
+     spec:["4 in. backwater flap valve that opens with a fraction of an inch of water","4 in. Sch 40 PVC, glued joints, sloped down to the valve so nothing ponds behind it","The basin outlet (14 in. deep) is 2 in. higher than the box entry (16 in.), so the rock basket drains completely","Enters 1 in. above the 17 in. overflow line, so a full box can't back up into the basket"],
+     note:"Why no U-trap: a trap holds a small pool of water on the open side of the seal, the same way catch-basin sumps breed mosquitoes, and it collects the silt that gets past the rock. The flap valve seals without holding any water."},
+    {id:"box",n:4,x:284,y:180,name:"Storage box",depth:"12–36″, on a 4″ gravel base",
+     what:"Plastic stormwater crates, about 94% open space, wrapped in a welded liner. It holds winter runoff for the tree's dry season.",
+     spec:["2.5 ft wide × 14 ft long × 2 ft tall","Water stored from 17 in. down to 36 in.: 2.5 × 14 × 1.58 ft × 0.94 × 7.48 ≈ 390 gal","Fills from empty with about 1.4 in. of rain (390 ÷ 280)","12–17 in. is surge space for storms","Liner: heat-welded, root-resistant membrane with welded collars at every pipe","Reserve: the bottom inch (about 25 gal) is never used, so the wick intakes stay underwater","Dig: 36 in. + 4 in. base ≈ 3.3 ft, under OSHA's 5 ft shoring limit"],
+     note:"live"},
+    {id:"standpipe",n:5,x:424,y:236,name:"Overflow standpipe",depth:"Rim at 17″, adjustable",
+     what:"A vertical pipe inside the box. When water reaches its rim, the extra pours in and drains to the gravel trench, so the box can never overfill.",
+     spec:["4 in. slip-fit pipe, reached through the service box","Rim sits 3 in. below the wick outlets (14 in.), so the wicks can't siphon the box","Leaves the box at 30 in. through a welded collar","Years 3–5: slide it down to 20 in., then 23 in. Each inch shifts about 20 gal from storage to the deep soil (35 sq ft × 1/12 ft × 0.94 × 7.48)","Recharge mode after year 5: drop the rim to about 30 in. The box keeps about 120 gal and sends the rest of each storm to the trench"],
+     note:"A lower rim means the wicks lift farther and deliver less to the shallow zone, while more winter water reaches the deep soil. That is how the roots get pulled down."},
+    {id:"trench",n:6,x:678,y:318,name:"Gravel overflow trench",depth:"28–48″, can go deeper",
+     what:"Overflow water empties into a trench of clean gravel and soaks down into the native soil. Each storm also wets the deep soil here, which draws roots down and recharges groundwater.",
+     spec:["¾ in. washed rock (ASTM #57)","Nonwoven geotextile on the top and sides; bottom left open so water soaks in","Flap valve and a pocket of coarse rock at the pipe end, so roots can't grow back up the pipe","Wider than it is deep (for example 6 ft long with a 4 ft dig), so EPA doesn't count it as an injection well","Dashed: optional deeper section where the soil drains better farther down. Past 5 ft, OSHA requires shoring"],
+     note:"Site check first: the soil must absorb at least 0.3 in./hr, the trench must sit 10 ft from foundations and property lines, and its bottom 10 ft above groundwater. A site that fails sends overflow back to the gutter."},
+    {id:"wicks",n:7,x:172,y:250,name:"Sand wicks",depth:"U at the box floor, outlets at 14″",
+     what:"Pipes packed with fine sandy soil that lift water by capillary action, like a paper towel. Water only moves when the soil at the outlet is drier than the wick, so the tree sets the pace.",
+     spec:["6 wicks (3 shown), 4 in. Sch 40 PVC sleeves bent into a U","Fill, picked by the bench test: fine silica sand with 15–30% silt-size particles. In lab columns, plain fine sand lifted water about 20 cm (8 in.) and silt about 155 cm","Climb: 3 in. when the box is full, about 21 in. near empty","Estimated flow: about 3 L/day per wick (Darcy: 0.72 m/day × 0.0082 m² × gradient 0.5), about 18 L/day for six vs. the tree's 8–11","Pull-out sock cartridges, swapped through the service box","Outlets sit above the overflow line, so they can't siphon"],
+     note:"Roots can't get into the box: the bottom of each U stays underwater, and roots stop at soaked, airless sand."},
+    {id:"sweet",n:8,x:104,y:199,name:"Sweet spot",depth:"10–20″, curb side",
+     what:"A band of damp, airy soil around the wick outlets. Roots that land here grow fastest, so this is where the young tree builds its main roots.",
+     spec:["Sandy loam with about 15% biochar around each outlet","Loam pockets are needed because water won't move from fine wick sand into coarser surrounding soil","12–18 in. is where a tree's water-absorbing roots live, and a new root ball is about 16 in. deep","Kept 10 in. or deeper so it never competes with the soil right under the sidewalk"],
+     note:""},
+    {id:"tree",n:9,x:206,y:28,name:"Tree + root ball",depth:"Root ball 0–16″",
+     what:"A young tree from a 24 in. box. The wick outlets sit just beside the root ball, so water reaches the roots from day one.",
+     spec:["Root ball about 24 in. wide × 16 in. deep (nursery standard: depth at least 66% of width)","A low-water species from the city's street-tree list, such as western redbud or palo verde, so it can live mainly on rain once established","Match the canopy to the soil: about 2 cu ft of soil per sq ft of canopy"],
+     note:""},
+    {id:"service",n:10,x:474,y:104,name:"Service box + sensors",depth:"Grade to 12″",
+     what:"A flush lid over the box and the one access point for everything: refills, adjusting the standpipe, swapping wicks, and vacuuming silt.",
+     spec:["Gasketed flush lid on a 12–18 in. riser","Summer refill: a truck pours about 150 gal in here","Sensors: soil-tension sensors (Irrometer Watermark) at the outlets, a water-level sensor in the box, and a logger","Once a year: vacuum fine silt off the box floor"],
+     note:"The sensors tell a crew when to refill and when the tree is ready to step down the depth ladder."},
+    {id:"vent",n:11,x:386,y:72,name:"Screened vent",depth:"Grade to box top",
+     what:"Lets air out as the box fills and back in as it drains. A fine stainless screen keeps mosquitoes out.",
+     spec:["2 in. PVC with a stainless-steel screen cap","Without it, trapped air would slow filling during storms"],
+     note:""},
+    {id:"soil",n:12,x:90,y:300,name:"Soil + root barrier",depth:"0–36″, parkway (under the walk only if it's rebuilt)",
+     what:"The parkway soil around the box, plus a root barrier along the sidewalk edge. The sidewalk can stay exactly as it is, or, if a city is replacing it anyway, get structural soil underneath.",
+     spec:["Root barrier along the sidewalk edge of the parkway only, behind this view","Keep the sidewalk: no sidewalk work; the barrier and the curb-side sweet spot do the steering. Less soil for roots, so plant a smaller-canopy tree","Rebuild the sidewalk: gravel layer under the new slab plus CU-Structural Soil 36 in. deep (Cornell: at least 24 in., preferably 36)","Structural soil holds about half the water of loam (7–12% vs. about 15%); the box makes up the difference","In one field comparison, structural soil alone didn't stop lifting, so it is always paired with the barrier and gravel layer","Never ring the tree. Leave the curb side and parkway ends open"],
+     note:"See step 4 below for both sidewalk options side by side."}
+  ];
+  var BY={}; PARTS.forEach(function(p){BY[p.id]=p;});
+
+  // ---------- simulation ----------
+  // Downtown LA monthly rain normals, 1991–2020 (in.), Jan..Dec. NWS Los Angeles.
+  var RAIN=[3.29,3.64,2.23,0.69,0.32,0.09,0.02,0.00,0.13,0.58,0.78,2.48];
+  var CAP=390, RES=25, GAL_PER_IN=280, REFILL=150, LOSS=0.25, WINTER_USE=5;
+  var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var state={week:44, dry:false, summer:15, playing:false, timer:null, sel:null};
+  var res=null;
+
+  function simulate(dry, summer){
+    var scale=dry?0.5:1, level=CAP*0.5, out=null;
+    for(var pass=0;pass<2;pass++){
+      var weeks=[], refills=0, overflow=0;
+      for(var w=0;w<52;w++){
+        var d=new Date(Date.UTC(2026,9,1+7*w));
+        var m=d.getUTCMonth();
+        var dim=new Date(Date.UTC(d.getUTCFullYear(),m+1,0)).getUTCDate();
+        var rain=RAIN[m]*scale*7/dim;
+        var eff=Math.max(0,RAIN[m]*scale-LOSS)*7/dim;
+        var inflow=eff*GAL_PER_IN;
+        var use=(m>=4&&m<=9)?summer:WINTER_USE;
+        level+=inflow; var of=0;
+        if(level>CAP){of=level-CAP;level=CAP;}
+        overflow+=of;
+        level-=use; var refill=false;
+        if(level<RES){level+=REFILL;refills++;refill=true;}
+        weeks.push({m:m,day:d.getUTCDate(),rain:rain,inflow:inflow,use:use,level:level,of:of,refill:refill});
+      }
+      out={weeks:weeks,refills:refills,overflow:overflow};
+    }
+    return out;
+  }
+
+  var NS="http://www.w3.org/2000/svg";
+  function el(tag,attrs,parent){var e=document.createElementNS(NS,tag);for(var k in attrs)e.setAttribute(k,attrs[k]);if(parent)parent.appendChild(e);return e;}
+  function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+  // ---------- diagram: markers, chips, panel ----------
+  var svg=document.getElementById("xsec");
+  var mk=document.getElementById("markers");
+  var chips=document.getElementById("chips");
+  var detail=document.getElementById("xsDetail");
+  PARTS.forEach(function(p){
+    var g=el("g",{"class":"mk","data-part":p.id,tabindex:"0",role:"button","aria-label":p.n+". "+p.name},mk);
+    el("circle",{cx:p.x,cy:p.y,r:9},g);
+    var t=el("text",{x:p.x,y:p.y+3.5,"text-anchor":"middle"},g); t.textContent=p.n;
+    g.addEventListener("keydown",function(e){ if(e.key==="Enter"||e.key===" "){e.preventDefault();select(p.id);} });
+    var b=document.createElement("button");
+    b.type="button"; b.className="chip"; b.setAttribute("data-part",p.id); b.setAttribute("aria-pressed","false");
+    b.innerHTML="<i>"+p.n+"</i><span>"+esc(p.name)+"</span>";
+    b.addEventListener("click",function(){ select(state.sel===p.id?null:p.id); });
+    chips.appendChild(b);
+  });
+  svg.addEventListener("click",function(e){
+    var t=e.target.closest?e.target.closest("[data-part]"):null;
+    select(t?t.getAttribute("data-part"):null);
+  });
+
+  function liveBoxLine(){
+    var d=res.weeks[state.week];
+    return "In the model right now ("+MON[d.m]+" "+d.day+"): "+Math.round(d.level)+" gal, water surface "+(36-19*d.level/CAP).toFixed(0)+" in. deep.";
+  }
+  function renderDetail(){
+    var p=state.sel?BY[state.sel]:null;
+    if(!p){
+      detail.innerHTML='<span class="eyebrow">Tap any number</span><h3>How the water moves</h3>'+
+        '<ol class="flow"><li>Street → grate → rock filter</li><li>Flap valve → storage box</li><li>Sand wicks → sweet spot → roots</li><li>Overflow → gravel trench → deep soil</li></ol>'+
+        '<p class="muted">Each part has its specs, sizes and the reason it is there.</p>';
+      return;
+    }
+    var note=p.note==="live"?liveBoxLine():p.note;
+    detail.innerHTML='<span class="eyebrow">Part '+p.n+' / 12 · '+esc(p.depth)+'</span>'+
+      '<h3>'+esc(p.name)+'</h3><p>'+esc(p.what)+'</p>'+
+      '<ul class="specl">'+p.spec.map(function(s){return "<li>"+esc(s)+"</li>";}).join("")+'</ul>'+
+      (note?'<p class="note">'+esc(note)+'</p>':'')+
+      '<button type="button" class="clear" id="clearSel">Show all parts</button>';
+    document.getElementById("clearSel").addEventListener("click",function(){select(null);});
+  }
+  function select(id){
+    state.sel=id;
+    svg.classList.toggle("focus",!!id);
+    Array.prototype.forEach.call(svg.querySelectorAll(".part"),function(g){g.classList.toggle("is-sel",g.getAttribute("data-part")===id);});
+    Array.prototype.forEach.call(svg.querySelectorAll(".mk"),function(g){g.classList.toggle("is-sel",g.getAttribute("data-part")===id);});
+    Array.prototype.forEach.call(chips.querySelectorAll(".chip"),function(b){b.setAttribute("aria-pressed",b.getAttribute("data-part")===id?"true":"false");});
+    renderDetail();
+  }
+
+  // full spec table
+  var rows=document.getElementById("specRows");
+  rows.innerHTML=PARTS.map(function(p){
+    return "<tr><td class='mono'>"+p.n+"</td><th scope='row' class='pname'>"+esc(p.name)+"</th><td class='mono dep'>"+esc(p.depth)+"</td><td><ul class='specl'>"+p.spec.map(function(s){return "<li>"+esc(s)+"</li>";}).join("")+"</ul></td></tr>";
+  }).join("");
+
+  // ---------- chart ----------
+  var CX0=48, CX1=664, GY0=22, GY1=150, RY0=166, RMAXH=36, LBL=226;
+  function wx(w){return CX0+(w+0.5)*(CX1-CX0)/52;}
+  function gy(g){return GY1-(g/CAP)*(GY1-GY0);}
+  var cursor, cdot;
+  function drawChart(){
+    var g=document.getElementById("chartG"); while(g.firstChild)g.removeChild(g.firstChild);
+    el("line",{x1:CX0,y1:GY1,x2:CX1,y2:GY1,"class":"c-axis"},g);
+    el("line",{x1:CX0,y1:GY0,x2:CX1,y2:GY0,"class":"c-cap"},g);
+    el("line",{x1:CX0,y1:gy(RES),x2:CX1,y2:gy(RES),"class":"c-res"},g);
+    [0,130,260,390].forEach(function(v){
+      var t=el("text",{x:CX0-6,y:gy(v)+3.5,"text-anchor":"end","class":"x-tm"},g); t.textContent=v;
+    });
+    var tl=el("text",{x:CX0-6,y:GY0-9,"text-anchor":"end","class":"x-tm"},g); tl.textContent="gal";
+    var tc=el("text",{x:CX1,y:GY0-6,"text-anchor":"end","class":"x-tm"},g); tc.textContent="Full: overflow at 17″";
+    var pts=res.weeks.map(function(d,i){return [wx(i),gy(d.level)];});
+    var dA="M"+wx(0)+" "+GY1+" "+pts.map(function(p){return "L"+p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" ")+" L"+wx(51)+" "+GY1+" Z";
+    el("path",{d:dA,"class":"c-area"},g);
+    el("path",{d:"M"+pts.map(function(p){return p[0].toFixed(1)+" "+p[1].toFixed(1);}).join(" L"),"class":"c-line"},g);
+    var bw=(CX1-CX0)/52*0.62;
+    res.weeks.forEach(function(d,i){
+      var h=Math.min(RMAXH,d.rain*RMAXH);
+      if(h>0.2) el("rect",{x:(wx(i)-bw/2).toFixed(1),y:RY0,width:bw.toFixed(1),height:h.toFixed(1),"class":"c-rain"},g);
+      if(d.refill){ var x=wx(i); el("path",{d:"M"+(x-5)+" "+(GY1-2)+" L"+(x+5)+" "+(GY1-2)+" L"+x+" "+(GY1-11)+" Z","class":"c-refill"},g); }
+    });
+    el("line",{x1:CX0,y1:RY0,x2:CX1,y2:RY0,"class":"c-axis"},g);
+    var rl=el("text",{x:CX0-6,y:RY0+10,"text-anchor":"end","class":"x-tm"},g); rl.textContent="rain";
+    var rl2=el("text",{x:CX1,y:RY0+RMAXH+2,"text-anchor":"end","class":"x-tm"},g); rl2.textContent="bars: in. per week";
+    var prev=-1;
+    res.weeks.forEach(function(d,i){
+      if(d.m!==prev){
+        prev=d.m;
+        var tx=wx(i)-(CX1-CX0)/104;
+        el("line",{x1:tx,y1:GY1,x2:tx,y2:GY1+4,"class":"c-axis"},g);
+        var t=el("text",{x:tx+3,y:LBL,"class":"x-tm"},g); t.textContent=MON[d.m];
+      }
+    });
+    cursor=el("line",{x1:0,y1:GY0-4,x2:0,y2:RY0+RMAXH,"class":"c-cursor"},g);
+    cdot=el("circle",{cx:0,cy:0,r:5,"class":"c-dot"},g);
+    var hit=el("rect",{x:CX0,y:0,width:CX1-CX0,height:236,"class":"c-hit"},g);
+    hit.addEventListener("pointerdown",onPointer);
+    hit.addEventListener("pointermove",function(e){if(e.buttons===1)onPointer(e);});
+  }
+  function onPointer(e){
+    var c=document.getElementById("chart"), r=c.getBoundingClientRect();
+    var x=(e.clientX-r.left)*680/r.width;
+    var w=Math.round((x-CX0)/((CX1-CX0)/52)-0.5);
+    w=Math.max(0,Math.min(51,w)); stop(); setWeek(w);
+  }
+
+  // ---------- render ----------
+  function render(){
+    var d=res.weeks[state.week];
+    var g=d.level;
+    var depth=36-19*(g/CAP);
+    var y=90+6*depth;
+    var water=document.getElementById("xWater");
+    water.setAttribute("y",y.toFixed(1)); water.setAttribute("height",Math.max(0,304-y).toFixed(1));
+    var wl=document.getElementById("xWline"); wl.setAttribute("y1",y.toFixed(1)); wl.setAttribute("y2",y.toFixed(1));
+    var gt=document.getElementById("xGal");
+    gt.textContent=Math.round(g)+" gal";
+    gt.setAttribute("y",Math.min(288,Math.max(y+20,236)).toFixed(0));
+    var over=d.of>0.5, inflow=d.inflow>0.5;
+    document.getElementById("xOverPipe").classList.toggle("on",over);
+    document.getElementById("xOverOut").classList.toggle("on",over);
+    document.getElementById("xIn").classList.toggle("on",inflow);
+    document.getElementById("xInPipe").classList.toggle("on",inflow);
+    var x=wx(state.week);
+    cursor.setAttribute("x1",x); cursor.setAttribute("x2",x);
+    cdot.setAttribute("cx",x); cdot.setAttribute("cy",gy(g));
+    var date=MON[d.m]+" "+d.day;
+    document.getElementById("dateOut").textContent=date;
+    document.getElementById("week").value=state.week;
+    document.getElementById("week").setAttribute("aria-valuetext",date);
+    document.getElementById("roDate").textContent=date;
+    document.getElementById("roGal").innerHTML=Math.round(g)+"<small>gal</small>";
+    document.getElementById("roDepth").innerHTML=depth.toFixed(0)+"<small>in. deep</small>";
+    document.getElementById("roClimb").innerHTML=Math.max(0,depth-14).toFixed(0)+"<small>in.</small>";
+    document.getElementById("roRefill").textContent=res.refills;
+    document.getElementById("roOver").innerHTML=(Math.round(res.overflow/10)*10).toLocaleString()+"<small>gal</small>";
+    if(state.sel==="box"){ var n=detail.querySelector(".note"); if(n) n.textContent=liveBoxLine(); }
+  }
+  function setWeek(w){state.week=w; render();}
+  function recompute(){res=simulate(state.dry,state.summer); drawChart(); render();}
+
+  // ---------- controls ----------
+  var playBtn=document.getElementById("play");
+  function stop(){ if(state.timer){clearInterval(state.timer);state.timer=null;} state.playing=false; playBtn.textContent="Play"; playBtn.setAttribute("aria-label","Play one year"); }
+  function play(){
+    if(state.week>=51) setWeek(0);
+    state.playing=true; playBtn.textContent="Pause"; playBtn.setAttribute("aria-label","Pause");
+    state.timer=setInterval(function(){
+      if(state.week>=51){stop();return;}
+      setWeek(state.week+1);
+    },160);
+  }
+  playBtn.addEventListener("click",function(){ state.playing?stop():play(); });
+  document.getElementById("week").addEventListener("input",function(e){ stop(); setWeek(parseInt(e.target.value,10)); });
+  function seg(aId,bId,fn){
+    var a=document.getElementById(aId), b=document.getElementById(bId);
+    a.addEventListener("click",function(){a.setAttribute("aria-pressed","true");b.setAttribute("aria-pressed","false");fn(true);recompute();});
+    b.addEventListener("click",function(){b.setAttribute("aria-pressed","true");a.setAttribute("aria-pressed","false");fn(false);recompute();});
+  }
+  seg("rainTyp","rainDry",function(first){state.dry=!first;});
+  seg("use15","use20",function(first){state.summer=first?15:20;});
+
+  // copy email
+  document.getElementById("copyBtn").addEventListener("click",function(){
+    var status=document.getElementById("copyStatus"), code=document.getElementById("email");
+    function fallback(){
+      try{var r=document.createRange();r.selectNodeContents(code);var s=window.getSelection();s.removeAllRanges();s.addRange(r);}catch(e){}
+      status.textContent="Selected. Press Ctrl+C or Cmd+C to copy.";
+    }
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(code.textContent).then(function(){status.textContent="Copied.";},fallback);
+      } else fallback();
+    }catch(e){fallback();}
+  });
+
+  document.addEventListener("keydown",function(e){ if(e.key==="Escape"&&state.sel) select(null); });
+  // sidewalk option toggle (step 4 figure)
+  var across=document.getElementById("across"), swKeep=document.getElementById("swKeep"), swRebuild=document.getElementById("swRebuild"), swNote=document.getElementById("swNote");
+  var SW={keep:"No sidewalk work. The barrier goes in from the parkway side, and the curb-side sweet spot gives roots a better place to go. Less room for roots, so plant a smaller-canopy tree.",
+          rebuild:"When a city is replacing the sidewalk anyway: a gravel layer under the new slab breaks up the damp film, and structural soil to 36 in. gives roots room to cross deep, toward the yard."};
+  function setSw(mode){
+    across.classList.toggle("keep",mode==="keep");
+    swKeep.setAttribute("aria-pressed",mode==="keep"?"true":"false");
+    swRebuild.setAttribute("aria-pressed",mode==="keep"?"false":"true");
+    swNote.textContent=SW[mode];
+  }
+  swKeep.addEventListener("click",function(){setSw("keep");});
+  swRebuild.addEventListener("click",function(){setSw("rebuild");});
+  recompute();
+  renderDetail();
+
+  // The portfolio calls the same seasonal model and render functions as Play.
+  var portfolioTimer=null;
+  window.MilesProject={
+    kind:'treety',
+    play:function(){
+      if(portfolioTimer)return;
+      portfolioTimer=setInterval(function(){setWeek((state.week+1)%52);},160);
+    },
+    pause:function(){clearInterval(portfolioTimer);portfolioTimer=null;stop();},
+    ready:function(){return !!document.getElementById('xWater');}
+  };
+})();
+</script>
+
+<script>/* Bridge between a project document and its portfolio frame. No project data is sent. */
+(() => {
+  const config = window.MILES_EMBED;
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let active = !config.preview;
+  let paused = motion.matches;
+  const parentIsPortfolio = window.parent !== window;
+  const send = (type, detail = {}) => {
+    if (parentIsPortfolio) window.parent.postMessage({type, kind: config.kind, ...detail}, '*');
+  };
+  const apply = () => {
+    config.active = active && !document.hidden;
+    const api = window.MilesProject;
+    document.documentElement.classList.toggle('portfolio-paused',!config.active||(config.preview&&paused));
+    if (!config.preview) { if (!config.active) api?.pause?.(); return; }
+    if (config.active && !paused) api?.play?.();
+    else api?.pause?.();
+  };
+  window.addEventListener('message', event => {
+    if (event.source !== window.parent || event.data?.type !== 'miles:visibility') return;
+    active = Boolean(event.data.active);
+    paused = Boolean(event.data.paused);
+    apply();
+  });
+  document.addEventListener('visibilitychange', apply);
+  motion.addEventListener('change', event => { if (!parentIsPortfolio) paused = event.matches; apply(); });
+  window.addEventListener('pagehide', () => window.MilesProject?.pause?.());
+  document.addEventListener('click', event => {
+    const a = event.target.closest('a[href]');
+    if (!a) return;
+    const href = a.getAttribute('href');
+    if (parentIsPortfolio && /^\/(projects|apps)\//.test(href)) {
+      event.preventDefault();
+      send('miles:navigate', {path: href});
+    } else if (/^https?:/.test(href)) {
+      a.target = '_blank'; a.rel = 'noopener noreferrer';
+    }
+  });
+  // Preview duplicates should never make screen readers announce changing values.
+  if (config.preview) document.querySelectorAll('[aria-live]').forEach(el => el.setAttribute('aria-live', 'off'));
+  if (!parentIsPortfolio) {
+    const back = document.createElement('a');
+    back.href = '/projects/' + (config.kind === 'electric-model' ? 'electric-island' : config.kind) + '/';
+    back.className = 'portfolio-return'; back.textContent = '← Miles Silverman · Project';
+    document.body.append(back);
+  }
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => window.MilesProject?.resize?.(), 80);
+  });
+  apply();
+  if (window.MILES_APP_ERROR) send('miles:error', {message: window.MILES_APP_ERROR});
+  else if (!window.MilesProject || window.MilesProject.ready?.() === false) {
+    send('miles:error', {message:'This view could not start. Try another view or reload the workspace.'});
+  } else send('miles:ready');
+})();
+</script>
+</body></html>
