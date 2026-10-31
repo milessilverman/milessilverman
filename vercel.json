@@ -1,0 +1,5 @@
+{
+  "redirects": [
+    { "source": "/documents/miles-silverman-resume.docx", "destination": "/documents/miles-silverman-resume.pdf", "permanent": true }
+  ]
+}
