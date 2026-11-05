@@ -138,7 +138,9 @@
     const refreshMotion = () => {
       document.querySelectorAll('[data-motion-toggle]').forEach(button=>{
         button.setAttribute('aria-pressed',String(state.paused));
-        button.textContent=state.paused?'Play previews ▶':'Pause previews Ⅱ';
+        button.innerHTML=state.paused
+          ?'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg>Play previews'
+          :'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14M16 5v14"/></svg>Pause previews';
       });
       frames.forEach(sendVisibility);
     };
@@ -154,7 +156,7 @@
       }catch{if(workspaceStatus)workspaceStatus.textContent='Use Full workspace for a larger view.';}
     });
     on(document,'fullscreenchange',()=>{
-      if(expand)expand.textContent=document.fullscreenElement?'Exit expanded view ↙':'Expand view ↗';
+      if(expand)expand.innerHTML=document.fullscreenElement?'Exit expanded view <span class="arrow" aria-hidden="true">↙</span>':'Expand view <span class="arrow" aria-hidden="true">↗</span>';
     });
     const filters=[...document.querySelectorAll('[data-filter]')];
     filters.forEach(button=>on(button,'click',()=>{
