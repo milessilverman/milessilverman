@@ -1,5 +1,22 @@
 {
   "redirects": [
-    { "source": "/documents/miles-silverman-resume.docx", "destination": "/documents/miles-silverman-resume.pdf", "permanent": true }
+    { "source": "/documents/miles-silverman-resume.docx", "destination": "/documents/miles-silverman-resume.pdf", "permanent": true },
+
+    { "source": "/everyspace", "destination": "/everyspace/", "permanent": false },
+    { "source": "/everyspace/:path((?:[^/]+/)*[^/.]+)", "destination": "/everyspace/:path/", "permanent": false },
+
+    { "source": "/city-pretty", "destination": "/city-pretty/", "permanent": false },
+    { "source": "/city-pretty/:path((?:[^/]+/)*[^/.]+)", "destination": "/city-pretty/:path/", "permanent": false },
+    { "source": "/citypretty", "destination": "/city-pretty/", "permanent": false },
+    { "source": "/citypretty/:path(.*)", "destination": "/city-pretty/:path", "permanent": false },
+
+    { "source": "/streetforge", "destination": "https://www.streetforge.app/", "permanent": false },
+    { "source": "/streetforge/:path(.*)", "destination": "https://www.streetforge.app/:path", "permanent": false },
+    { "source": "/streetforward", "destination": "https://www.streetforge.app/", "permanent": false },
+    { "source": "/streetforward/:path(.*)", "destination": "https://www.streetforge.app/:path", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/everyspace/:path(.*)", "destination": "https://milessilverman.github.io/everyspace/:path" },
+    { "source": "/city-pretty/:path(.*)", "destination": "https://milessilverman.github.io/city-pretty/:path" }
   ]
 }

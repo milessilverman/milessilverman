@@ -18,6 +18,20 @@ Plain static site: no build step, no framework. Vercel serves the repo root as-i
 | `robots.txt`, `sitemap.xml` | Crawler hints; add new pages to the sitemap by hand |
 | `assets/site.css`, `assets/site.js` | Shared styles and behavior for every page |
 
+## Project sites under this domain
+
+`vercel.json` gives each separately hosted project an address here. Nothing is copied into this repo, so there is nothing to keep in sync:
+
+| Address | What it shows |
+| --- | --- |
+| `/everyspace/` | The GitHub Pages site of [milessilverman/everyspace](https://github.com/milessilverman/everyspace), passed through live |
+| `/city-pretty/` (`/citypretty` redirects here) | The GitHub Pages site of [milessilverman/city-pretty](https://github.com/milessilverman/city-pretty), passed through live |
+| `/streetforge` (and `/streetforward`) | Redirects to https://www.streetforge.app, where StreetForge is hosted. Its project page here stays at `/projects/streetforge/` |
+
+The two passed-through sites update on their own whenever their GitHub Pages site is published (GitHub lets browsers keep a page for up to 10 minutes). Files in this repo always win over these rules, and the rules only cover the paths above.
+
+To add another GitHub Pages project, copy the three `everyspace` lines in `vercel.json` (two redirects that add the missing trailing slash, one rewrite) and change the name to the repository's name. Keep the address the same as the repository name, because Pages sites often link to their own files by that path. The project's pages must use relative links.
+
 The site header, contact section and footer are repeated in each page, so a change to the
 navigation or contact details has to be made in every `index.html`.
 
